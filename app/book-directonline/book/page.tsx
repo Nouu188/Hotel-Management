@@ -3,6 +3,7 @@
 import BillSearchingSection from "@/components/bill/BillSearchingSection";
 import BookingProcedure from "@/components/bookingprocedure/BookingProcedure";
 import RoomSelectedBookingSection from "./RoomSelectedBookingSection";
+import { Suspense } from "react";
 
 const BookingPage = () => {
     return (
@@ -10,7 +11,9 @@ const BookingPage = () => {
             <section className="flex justify-center w-full">
                 <div className="flex justify-between gap-4 max-w-291">
                     <div className="flex flex-col space-y-6 my-[18px]">
-                        <RoomSelectedBookingSection />
+                        <Suspense fallback={<div>Loading...</div>}>
+                            <RoomSelectedBookingSection />
+                        </Suspense>
                         <BookingProcedure />
                     </div>
                     <div>
