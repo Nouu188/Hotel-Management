@@ -1,19 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/navbar";
+import Navbar from "@/components/navbar/navbar_for_homepage";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { Providers } from "./providers";
+import Footer from "@/components/footer/page";
 
 export const metadata: Metadata = {
   title: "Hô teo",
@@ -26,18 +17,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={``}> 
       <SessionProvider>
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-            <div className="mx-30">
-              <Navbar /> 
-            </div>
-
-            <main>
+        <Providers>
+          <body className="flex flex-col min-h-screen"> 
+            <main className="flex-grow">
               {children}
               <Toaster/>
             </main>
-        </body>
+          </body>
+        </Providers>
       </SessionProvider>
     </html>
   );

@@ -19,4 +19,4 @@ export const imagesCarousel = [
         title: "Twilight Sky Bar Saigon",
         description: "Located on 12th floor with the great view of the city"
     }
-]
+];

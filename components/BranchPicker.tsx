@@ -25,7 +25,7 @@ const BranchPicker = ({
   return (
     <div>
         <Select onValueChange={onValueChange}>
-          <SelectTrigger className={cn(className ? `${className}` : "rounded-none", "z-100 w-[340px] text-[17px] border-gray-200 bg-white")}>
+          <SelectTrigger className={cn(className ? `${className}` : "rounded-none", "z-100 w-[340px] max-xl:w-[250px] text-[17px] border-gray-200 bg-white")}>
             <SelectValue placeholder={`${defaultValue}` || "Select branch"} />
           </SelectTrigger>
           <SelectContent className='z-100'>

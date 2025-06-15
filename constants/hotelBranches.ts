@@ -1,14 +1,20 @@
 export const hotelBranches = [
     {
-        name: "La Roche Premium SaiGon Central"
+        name: "La Sieste Premium Hang Be"
     },
     { 
-        name: "La Roche Premium Da Nang"
+        name: "La Sieste Classic Ma May"
     },
     { 
-        name: "La Roche Classic Hoi An"
+        name: "La Sieste Premium Hang Thung"
+    },
+    {
+        name: "La Sieste Premium SaiGon"
+    },
+    {
+        name: "La Sieste Premium SaiGon Central"
     },
     { 
-        name: "La Roche Premium Long An"
-    }
+        name: "La Sieste Hoi An Resort & Spa"
+    },
 ]

@@ -1,110 +1,136 @@
 "use client";
 
-import BillSearchingSection from "@/components/BillSearchingSection";
+import BillSearchingSection from "@/components/bill/BillSearchingSection";
 import { DatePickerWithRange } from "@/components/DatePickerWithRange";
 import RoomGuestSelector from "@/components/Rooms_Guests_Selector";
-import RoomSearchingSection, { RoomInDetails } from "@/components/RoomSearchingSection";
+import { hotelBranches } from "@/constants/hotelBranches";
 import { useSyncBookingQuery } from "@/hooks/useSyncBookingQuery";
+import { AppDispatch, RootState } from "@/store/store";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
+import { useDispatch, useSelector } from "react-redux";
+import { setDateRange, setSelectedBranch } from "@/store/slices/filterHotelRoomTypeSlice"; 
+import HotelBranchRoomTypeFilterSection from "@/components/filter/HotelBranchRoomTypeFilterSection";
+import { Tag } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
 
 const BookDirectOnline = () => {
+    const form = useForm();
+    const dispatch: AppDispatch = useDispatch();
     const searchParams = useSearchParams();
+    const [openPromoCode, setOpenPromoCode] = useState(false);
 
-    const selectedBranch = searchParams.get('branch') as string;  
-    const fromDate = searchParams.get("fromDate");
-    const toDate = searchParams.get("toDate");
+    const selectedBranch = useSelector((state: RootState) => state.filterHotelRoomType.selectedBranch);
+    const dateRange = useSelector((state: RootState) => state.filterHotelRoomType.dateRange);
+    const guestAllocation = useSelector((state: RootState) => state.filterHotelRoomType.guestAllocation);
+    
+    useEffect(() => {
+        const branchFromUrl = searchParams.get("branch");
+        const fromDateFromUrl = searchParams.get("fromDate");
+        const toDateFromUrl = searchParams.get("toDate");
 
-    const [items, setItems] = useState<{ adults: number; children: number; infants: number }[]>([{ adults: 2, children: 0, infants: 0 },]);
-    const addOrRemoveRooms = (newRooms: { adults: number; children: number; infants: number }[]) => { 
-        setItems(newRooms);
-    };
-
-    const initialDateRange = useMemo(() => {
-        if(!fromDate || !toDate) {
-            return;
+        if (branchFromUrl && branchFromUrl !== selectedBranch && hotelBranches.some(b => b.name === branchFromUrl)) {
+            dispatch(setSelectedBranch(branchFromUrl));
         }
-        const fromDateTime = new Date(fromDate);
-        const toDateTime = new Date(toDate);
 
-        return { from: fromDateTime, to: toDateTime };
-    }, [fromDate, toDate]); 
+        if (fromDateFromUrl && toDateFromUrl) {
+            try {
+                const newFrom = new Date(fromDateFromUrl);
+                const newTo = new Date(toDateFromUrl);
+                
+                if (!isNaN(newFrom.getTime()) && !isNaN(newTo.getTime()) && (newFrom.getTime() !== dateRange?.from?.getTime() || newTo.getTime() !== dateRange?.to?.getTime())) 
+                {
+                    dispatch(setDateRange({ from: newFrom, to: newTo }));
+                }
+            } catch (error) {
+                console.error("Error parsing dates from URL:", error);
+            }
+        }
+    }, [searchParams]); 
 
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(initialDateRange);
-  
     useSyncBookingQuery({
-      selectedBranch,
-      dateRange,
-      items,
+        selectedBranch,
+        dateRange,
+        items: guestAllocation, 
     });
 
-    const [selectedRoomForBill, setSelectedRoomForBill] = useState<RoomInDetails[]>([]);
-    
-    const handleRoomSelect = (room: RoomInDetails) => {
-        setSelectedRoomForBill(prevItems => {
-            if(prevItems.find(item => item.id === room.id)) {
-                return prevItems;
-            }
-
-            return [...prevItems, room];
-        })
-    }
-
-    const handleDeselectRoom = (roomId: string) => {
-        setSelectedRoomForBill(prevItems => prevItems.filter(item => item.id !== roomId));
+    const handleDateChange = (newRange: DateRange | undefined) => {
+        dispatch(setDateRange(newRange));
     }
       
     return (
         <div className={`flex flex-col justify-center bg-[#eff8fc] bg-no-repeat`}>
-            <div className="w-full sticky h-18 z-10 bg-[#077dab]"></div>
-            <div className="relative w-full h-[270px]">
+            <div className="max-md:hidden relative w-full h-[260px]">
                 <Image
-                    src="/images/7.jpg"
+                    src="/images/13.jpg"
                     fill
                     className="object-cover"
                     alt="layout auth"
                 />
             </div>
 
-            <section className="z-10 flex justify-center -translate-y-12 w-full ">
-                <div className="flex gap-5 container border-2 rounded-md max-w-291 border-[#077dab] px-5 py-8 w-full bg-white ">
-                    <div className="space-y-1">
-                        <h2 className="raleway text-sm text-[#56595E]">Branch</h2>
-                        <div className="w-[340px] h-[50px] border-1 border-[#b4b2b2] rounded-sm flex justify-start items-center">
-                            <p className="ml-3 raleway text-[17px]">
-                                {selectedBranch}
-                            </p>
+            <section className="z-10 md:flex md:-mt-12 justify-center w-full max-md:shadow-md ">
+                <div className="md:container w-full md:border-2 md:px-5 md:rounded-md md:max-w-244 lg:max-w-253 max-md:py-2 md:border-[#077dab] bg-white">
+                    <div className={cn(openPromoCode && "md:border-b-1", "flex gap-5 py-4 w-full max-md:px-4 max-md:flex-col")}>
+                        <div className="space-y-1">
+                            <h2 className="raleway max-md:hidden text-sm text-[#56595E]">Select date</h2>
+                            <DatePickerWithRange
+                                value={dateRange}
+                                isRounded
+                                onChange={handleDateChange}
+                            />
                         </div>
-                    </div>
+                        
+                        <div className="space-y-1">
+                            <h2 className="raleway max-md:hidden text-sm text-[#56595E]">Select rooms and guests</h2>
+                            <RoomGuestSelector 
+                                guestAllocations={guestAllocation} 
+                            />
+                        </div>
 
-                    <div className="space-y-1">
-                        <h2 className="raleway text-sm text-[#56595E]">Select date</h2>
-                        <DatePickerWithRange
-                            value={dateRange}
-                            isRounded
-                            onChange={(range) => setDateRange(range)}
-                        />
+                        {!openPromoCode && (
+                            <button 
+                                className="hover:text-[#077dab] text-[#393b3f] translate-y-2 flex items-center gap-1 cursor-pointer transition-colors duration-300 ease-in-out"
+                                onClick={() => {
+                                    setOpenPromoCode(!openPromoCode);
+                                }}
+                            >
+                                <Tag className="w-5"/>
+                                <p>Have a promo code?</p>
+                            </button>
+                        )}
                     </div>
-                    
-                    <div className="space-y-1">
-                        <h2 className="raleway text-sm text-[#56595E]">Select rooms and guests</h2>
-                        <RoomGuestSelector onAddOrRemoveRooms={addOrRemoveRooms}/>
-                    </div>
+                    {openPromoCode && (
+                        <div className="flex justify-start py-4 gap-6 max-md:px-4">
+                            <div className="flex">
+                                <Input placeholder="Enter your promo code" className="max-w-[214px] h-[44px] rounded-tl-sm rounded-bl-sm rounded-tr-[2px] rounded-br-[2px]" />
+                                <Button className="h-[44px] bg-[#077dab] hover:bg-[#077dabf7] rounded-tr-sm rounded-br-sm rounded-tl-[2px] rounded-bl-[2px]">Apply</Button>
+                            </div>
+                            <button 
+                                className="hover:text-[#077dab] text-[#393b3f] cursor-pointer transition-colors duration-300 ease-in-out"
+                                onClick={() => {
+                                    setOpenPromoCode(!openPromoCode);
+                                }}    
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    )}
                 </div>
             </section>
 
-            <section className="flex justify-center -translate-y-3 w-full">
-                <div className="flex justify-between gap-4 max-w-291">
-                    <div className="flex flex-col">
-                        <RoomSearchingSection roomSelected={selectedRoomForBill} onRoomSelect={handleRoomSelect}/>
+            <section className="flex justify-center mt-8 w-full">
+                <div className="flex justify-between gap-2 lg:gap-4 max-w-291">
+                    <div className="flex flex-col mb-4">
+                        <HotelBranchRoomTypeFilterSection />
                     </div>
-                    <div>
-                        <BillSearchingSection
-                            selectedRooms={selectedRoomForBill}
-                            onDeselect={handleDeselectRoom}
-                        />
+                    <div className="max-md:hidden">
+                        <BillSearchingSection />
                     </div>
                 </div>
             </section>

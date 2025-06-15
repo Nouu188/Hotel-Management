@@ -1,7 +1,8 @@
 import ROUTES from "@/constants/route";
 import { fetchHandler } from "./handlers/fetch";
-import { Account, BookingRoomItem, Prisma, Room, User } from "@prisma/client";
+import { Account, BookingRoomItem, RoomType, User } from "@prisma/client";
 import { BookingDetails, SignInWithOAuthParams } from "@/types/action";
+import { DateRange } from "react-day-picker";
 
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api";
@@ -63,26 +64,26 @@ export const api = {
                 method: "DELETE"
             })
     },
-    rooms: {
-        getAll: () => fetchHandler(`${API_BASE_URL}/rooms`),
-        getById: (id: string) => fetchHandler(`${API_BASE_URL}/rooms/${id}`),
-        getByFilter: (branchName: string, items: { adults: number; children: number; infants: number }[]) => 
-            fetchHandler(`${API_BASE_URL}/rooms/filter`, {
+    roomsType: {
+        getAll: () => fetchHandler(`${API_BASE_URL}/roomsType`),
+        getById: (id: string) => fetchHandler(`${API_BASE_URL}/roomsType/${id}`),
+        getByFilter: (branchName: string, guestAllocations: { adults: number; children: number; infants: number }[], dateRange: DateRange | undefined) => 
+            fetchHandler(`${API_BASE_URL}/roomsType/filter`, {
                 method: "POST",
-                body: JSON.stringify({ branchName, items })
+                body: JSON.stringify({ branchName, guestAllocations, dateRange })
             }),
-        create: (roomData: Partial<Room>) => 
-            fetchHandler(`${API_BASE_URL}/rooms`, {
+        create: (roomData: Partial<RoomType>) => 
+            fetchHandler(`${API_BASE_URL}/roomsType`, {
                 method: "POST",
                 body: JSON.stringify(roomData)
             }),
-        update: (id: string, roomData: Partial<Room>) => 
-            fetchHandler(`${API_BASE_URL}/rooms/${id}`, {
+        update: (id: string, roomData: Partial<RoomType>) => 
+            fetchHandler(`${API_BASE_URL}/roomsType/${id}`, {
                 method: "POST",
                 body: JSON.stringify(roomData)
             }),
         delete: (id: string) => 
-            fetchHandler(`${API_BASE_URL}/rooms/${id}`, {
+            fetchHandler(`${API_BASE_URL}/roomsType/${id}`, {
                 method: "DELETE"
             })
     },
@@ -103,5 +104,12 @@ export const api = {
             fetchHandler(`${API_BASE_URL}/booking/${id}`, {
                 method: "DELETE"
             })
+    },
+    hotelBranchRoomType: {
+        getQuantityById: (roomTypeId: string, hotelBranchId: string, dateRange: DateRange | undefined) => 
+            fetchHandler(`${API_BASE_URL}/hotelBranchRoomType/quantity`, {
+                method: "POST",
+                body: JSON.stringify({ roomTypeId, hotelBranchId, dateRange })
+            }),
     }
 }

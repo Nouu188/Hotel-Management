@@ -64,7 +64,7 @@ const AuthForm = <T extends FieldValues>({
         description: result?.error?.message,
       });
     }
-};
+  };
 
   const buttonText = formType === "SIGN_IN" ? "Sign In" : "Sign Up";
 

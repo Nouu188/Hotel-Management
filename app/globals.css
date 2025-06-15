@@ -76,6 +76,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --collapsible-transition: grid-template-rows 0.3s ease-in-out;
 }
 
 .dark {
@@ -112,6 +113,10 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+.collapsible-content {
+  transition: var(--collapsible-transition);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -122,8 +127,8 @@
 }
 
 @font-face {
-  font-family: 'PlayfairDisplay';
-  src: url('/fonts/PlayfairDisplay-Medium.ttf') 
+  font-family: 'Playfair';
+  src: url('/fonts/Playfair.ttf') 
 }
 
 @font-face {
@@ -132,16 +137,25 @@
 }
 
 @font-face {
+  font-family: 'Raleway-Thin';
+  src: url('/fonts/Raleway-Thin.ttf') 
+}
+
+@font-face {
   font-family: "Lato";
   src: url('/fonts/Lato/BlackItalic')
 }
 
 .playfair {
-  font-family: 'PlayfairDisplay', serif;
+  font-family: 'Playfair', serif;
 }
 
 .raleway {
   font-family: "Raleway", 
+}
+
+.raleway-thin {
+  font-family: "Raleway-Thin"
 }
 
 .lato-black-italic {

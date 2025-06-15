@@ -1,10 +1,168 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  location  String?
+  role      String    @default("USER")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  account   Account?
+  booking   Booking[]
+}
+
+model Account {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  image             String?
+  password          String?
+  provider          String
+  providerAccountId String   @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RoomType {
+  id                   String                @id @default(uuid())
+  name                 String
+  capacity             Int
+  description          String
+  area                 Float
+  image                String[]
+  bedType              String?
+  bedNumb              Int                   @default(1)
+  bathNumb             Int                   @default(1)
+  price                Int
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  hotelBranchRoomTypes HotelBranchRoomType[] @relation("RoomTypeToHotelBranchRoomType")
+}
+
+model HotelBranchRoomType {
+  id            String            @id @default(uuid())
+  hotelBranchId String
+  roomTypeId    String
+  quantity      Int
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  bookingItems  BookingRoomItem[]
+  hotelBranch   HotelBranch       @relation(fields: [hotelBranchId], references: [id], onDelete: Cascade)
+  roomType      RoomType          @relation("RoomTypeToHotelBranchRoomType", fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelBranchId, roomTypeId])
+}
+
+model HotelBranch {
+  id                   String                @id @default(uuid())
+  name                 String                @unique
+  location             String
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  hotelBranchRoomTypes HotelBranchRoomType[]
+}
+
+model BookingGuest {
+  id                String   @id @default(uuid())
+  bookingId         String   @unique
+  firstName         String
+  lastName          String
+  email             String
+  personalRequest   String?
+  planedArrivalTime String
+  phone             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  booking           Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model Booking {
+  id               String            @id @default(uuid())
+  userId           String
+  fromDate         DateTime
+  toDate           DateTime
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  bill             Bill?
+  user             User              @relation(fields: [userId], references: [id])
+  bookingGuest     BookingGuest?
+  bookingRoomItems BookingRoomItem[]
+  usingservices    UsingService[]
+}
+
+model BookingRoomItem {
+  id                    String              @id @default(uuid())
+  bookingId             String
+  hotelBranchRoomTypeId String
+  quantityBooked        Int
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  booking               Booking             @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotelBranchRoomType   HotelBranchRoomType @relation(fields: [hotelBranchRoomTypeId], references: [id])
+
+  @@unique([bookingId, hotelBranchRoomTypeId])
+}
+
+model Bill {
+  id            String        @id @default(uuid())
+  bookingId     String        @unique
+  staffId       String
+  checkIn       DateTime
+  checkOut      DateTime
+  paymentMethod PaymentMethod
+  status        BillStatus
+  voucher       Float         @default(0)
+  finalAmount   Float
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  staff         Staff         @relation(fields: [staffId], references: [id])
+}
+
+model Staff {
+  id         String    @id @default(uuid())
+  name       String
+  role       StaffRole
+  enrollDate DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  bills      Bill[]
+}
+
+model UsingService {
+  id        String   @id @default(uuid())
+  bookingId String
+  serviceId String
+  quantity  Int      @default(1)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  service   Service  @relation(fields: [serviceId], references: [id])
+
+  @@unique([bookingId, serviceId])
+}
+
+model Service {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  price         Int
+  image         String[]
+  description   String?
+  priceType     String?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  usingServices UsingService[]
 }
 
 enum PaymentMethod {
@@ -22,147 +180,9 @@ enum BillStatus {
   PENDING
 }
 
-model User {
-  id   String   @id @default(uuid()) 
-  name      String
-  email     String   @unique
-  location  String?
-  role      String @default("USER")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  account   Account? 
-}
-
-model Account {
-  id        String @id @default(uuid()) 
-  userId    String @unique
-  image     String?
-  password  String?
-
-  provider  String 
-  providerAccountId   String @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-enum RoomStatus {
-  AVAILABLE
-  BOOKED
-  MAINTAINANCE
-}
-
-model RoomIndetail {
-  id          String @id @default(uuid())
-
-  name        String
-  capacity    Int
-
-  description String
-  area        Float
-  bedType     String?
-  bedNumb     Int @default(1)
-  bathNumb    Int @default(1)
-
-  price       Int
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  rooms       Room[] @relation("RoomToRoomIndetail")
-  
-}
-
-model Room {
-  id          String @id @default(uuid())
-  branchId    String 
-  roomInDetailId  String
-
-  status      RoomStatus
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  hotel       HotelBranch @relation(fields: [branchId], references: [id])
-  RoomInDetailss  BookingRoomItem[]
-
-  roomIndetail    RoomIndetail @relation("RoomToRoomIndetail", fields: [roomInDetailId], references: [id])
-}
-
-model HotelBranch {
-  id        String @id @default(uuid())
-  name      String @unique
-  location  String
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  room      Room[]
-}
-
-model BookingGuest {
-  id          String @id @default(uuid())
-  bookingId   String @unique
-
-  firstName   String
-  lastName    String
-  email       String
-  personalRequest     String?
-  planedArrivalTime   String
-  guestNumb  Int?
-
-  booking     Booking @relation(fields: [bookingId], references: [id])
-}
-
-model Booking {
-  id          String @id @default(uuid())
-
-  fromDate    DateTime
-  toDate      DateTime
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  RoomInDetails    BookingRoomItem[]
-  bookingguest    BookingGuest?
-}
-
-model BookingRoomItem {
-  id        String @id @default(uuid())
-
-  bookingId String
-  roomId    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  room      Room    @relation(fields: [roomId], references: [id])   
-                
-  usingservices UsingService[]
-
-  @@unique([bookingId, roomId])
-}
-
-model Bill {
-  id          String @id @default(uuid())
-  staffId     String @unique
-
-  checkIn     DateTime
-  checkOut    DateTime
-  paymentMethod   PaymentMethod
-  status      BillStatus
-
-  voucher     Float
-  finalAmount Float
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  staff       Staff @relation(fields: [staffId], references: [id])
+enum PriceType {
+  PERBOOKING
+  PERADULT
 }
 
 enum StaffRole {
@@ -170,41 +190,3 @@ enum StaffRole {
   RESERVATION
   CASHIER
 }
-
-model Staff {
-  id          String @id @default(uuid())
-
-  name        String
-  role        StaffRole
-  enrollDate  DateTime
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  bill        Bill?
-}
-
-model UsingService {
-  id          String @id @default(uuid())
-  bookingId  String?
-
-  serviceId   String
-
-  RoomInDetailss  BookingRoomItem[]
-  service     Service[]
-}
-
-model Service {
-  id          String @id @default(uuid())
-  usingServiceId    String?
-
-  name        String
-  price       Int
-  image       String[]
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  usingService    UsingService[] 
-}
-
