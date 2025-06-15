@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from '@/lib/utils';
 import { RootState } from '@/store/store'
 import Image from 'next/image';
 import React, { useState } from 'react'

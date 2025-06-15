@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
 import { Providers } from "./providers";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Hô teo",
@@ -18,12 +19,14 @@ export default function RootLayout({
     <html lang="en" className={``}> 
       <SessionProvider>
         <Providers>
-          <body className="flex flex-col min-h-screen"> 
-            <main className="flex-grow">
-              {children}
-              <Toaster/>
-            </main>
-          </body>
+          <Suspense>
+            <body className="flex flex-col min-h-screen"> 
+              <main className="flex-grow">
+                {children}
+                <Toaster/>
+              </main>
+            </body>
+          </Suspense>
         </Providers>
       </SessionProvider>
     </html>
