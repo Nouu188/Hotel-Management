@@ -1,42 +1,6 @@
-import handleError from "@/lib/handlers/error";
-import { NotFoundError } from "@/lib/http-errors";
 import prisma from "@/lib/prisma";
-import { ApiErrorResponse } from "@/types/global";
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
-
-export async function GET(
-  _request: Request,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
-
-  try {
-    const bookingRoomItem = await prisma.bookingRoomItem.findUnique({
-      where: { id },
-    });
-
-    if (!bookingRoomItem) {
-      return NextResponse.json(
-        { success: false, message: `BookingRoomItem with ID ${id} not found.` },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(
-      { success: true, data: bookingRoomItem },
-      { status: 200 }
-    );
-  } catch (error) {
-    if (error instanceof NotFoundError) {
-      return NextResponse.json(
-        { success: false, message: error.message },
-        { status: error.statusCode }
-      );
-    }
-    return handleError(error, "api") as ApiErrorResponse;
-  }
-}
 
 interface BookingRoomItemClientData {
   hotelBranchRoomTypeId: string;
