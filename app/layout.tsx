@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/navbar/navbar_for_homepage";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
 import { Providers } from "./providers";
-import Footer from "@/components/footer/page";
 
 export const metadata: Metadata = {
   title: "Hô teo",
