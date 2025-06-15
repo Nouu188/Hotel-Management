@@ -9,9 +9,10 @@ import { AppDispatch, RootState } from '@/store/store';
 import { clearAllRoomSelections } from '@/store/slices/selectedHotelRoomTypesSlice';
 import { BookingDetails, ClientApiBookingRoomItem } from '@/types/action';
 import ROUTES from '@/constants/route';
-import { ClientDetailsFormValues } from '../../hooks/useClientDetailForm';
 import { useState } from 'react';
-import { SectionName } from './BookingProcedure';
+import { SectionName } from '@/components/bookingprocedure/BookingProcedure';
+import { ClientDetailsFormValues } from './useClientDetailForm';
+
 
 export const useBooking = () => {
   const router = useRouter();
