@@ -1,7 +1,8 @@
+import { getRedis } from '@/lib/redis';
 import { NextResponse } from 'next/server';
-import redis from '@/lib/redis';
 
 export async function GET() {
+  const redis = getRedis();
   await redis.set("hello", "world");
   const value = await redis.get("hello");
 
