@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { RoomTypeInBriefProps } from '@/components/RoomTypeInBrief';
 
 const prisma = new PrismaClient();
@@ -149,7 +149,7 @@ const roomTypeInBrief: RoomTypeInBriefProps[] = [
 async function main() {
   console.log('Starting seeding process for RoomType images...');
 
-  const updatedRooms = await prisma.$transaction(async (tx) => {
+  const updatedRooms = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const results = [];
 
     for (const room of roomTypeInBrief) {

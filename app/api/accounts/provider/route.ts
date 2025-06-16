@@ -3,13 +3,14 @@ import { NotFoundError, ValidationError } from "@/lib/http-errors";
 import prisma from "@/lib/prisma";
 import { AccountSchema } from "@/lib/validation";
 import { ApiErrorResponse } from "@/types/global";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 export async function POST (request: Request) {
     const { providerAccountId } = await request.json();
 
     try {
-        const account = await prisma.$transaction(async (tx) => {
+        const account = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const validatedData = AccountSchema.partial().safeParse({ providerAccountId });
 
             if(!validatedData.success) {

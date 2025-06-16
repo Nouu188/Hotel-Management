@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const newBooking = await tx.booking.create({
         data: {
           userId: bookingData.userId,
