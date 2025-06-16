@@ -9,11 +9,7 @@
     "lint": "next lint"
   },
   "prisma": {
-    "dev": "next dev",
-    "build": "prisma generate && next build",
-    "start": "prisma migrate deploy && next start", 
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
+    "schema": "lib/schema.prisma",
     "seed": "ts-node --project tsconfig.server.json lib/seed.ts"
   },
   "dependencies": {
