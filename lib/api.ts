@@ -5,7 +5,7 @@ import { BookingDetails, SignInWithOAuthParams } from "@/types/action";
 import { DateRange } from "react-day-picker";
 
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://hotel-management-production-c212.up.railway.app/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api";
 
 export const api = {
     auth: {
