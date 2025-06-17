@@ -19,24 +19,7 @@ import { ProfileSkeleton } from '@/components/dashboard/profile/ProfileSkeleton'
 import GenderSelector from '@/components/dashboard/profile/GenderSelector';
 import BirthdaySelector from '@/components/dashboard/profile/BirthdaySelector';
 import AvatarSelector from '@/components/dashboard/profile/AvatarSelector';
-
-export function maskEmail(email: string): string {
-    const [user, domain] = email.split("@");
-    if (user.length <= 2) {
-        return `${user[0]}***@${domain}`;
-    }
-    const first = user[0];
-    const last = user[user.length - 1];
-    const hidden = "*".repeat(user.length - 2);
-    return `${first}${hidden}${last}@${domain}`;
-}
-
-export function maskPhoneNumber(phone: string): string {
-    if (phone.length < 2) return "*".repeat(phone.length);
-    const lastTwo = phone.slice(-2);
-    const masked = "*".repeat(phone.length - 2);
-    return masked + lastTwo;
-}
+import { maskEmail, maskPhoneNumber } from '@/lib/utils';
 
 type UserProfileFormValues = z.infer<typeof UserProfileSchema>;
 

@@ -88,6 +88,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const userInfo = {
         name: user.name!,
         email: user.email!,
+        image: user.image!,
         username: user.name?.toLowerCase() as string,
       };
 
