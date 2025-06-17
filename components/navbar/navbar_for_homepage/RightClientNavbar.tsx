@@ -53,11 +53,20 @@ const RightClientNavbar = () => {
                                     </Avatar>
                                     </MenubarTrigger>
 
-                                    <MenubarContent align="center" style={{ width: "100px", minWidth: "unset" }} className="playfair z-300 hover:bg-gray-200 flex justify-center text-md">
-                                    <MenubarItem className="flex whitespace-nowrap gap-3 hover:bg-transparent " onClick={handleSignOut}>
-                                        Log Out
-                                        <LogOut />
-                                    </MenubarItem>
+                                    <MenubarContent align="center" style={{ width: "100px", minWidth: "unset" }} className="playfair z-300 flex flex-col justify-center text-md">
+                                        <MenubarItem 
+                                            className="flex whitespace-nowrap gap-3 hover:bg-transparent hover:text-[#BF882E] ease-in-out transition-all duration-300 cursor-pointer" 
+                                            onClick={() => router.push("/user/dashboard?type=profile")}
+                                        >
+                                            Dashboard
+                                        </MenubarItem>
+                                        <MenubarItem 
+                                            className="flex whitespace-nowrap gap-3 hover:bg-transparent hover:text-[#BF882E] ease-in-out transition-all duration-300 cursor-pointer" 
+                                            onClick={handleSignOut}
+                                        >
+                                            Log Out
+                                            <LogOut />
+                                        </MenubarItem>
                                     </MenubarContent>
                                 </MenubarMenu>
                             </Menubar>

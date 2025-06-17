@@ -21,7 +21,7 @@ export async function signUpWithCredentials(
         return handleError(validationResult, "api") as ActionResponse; 
     } 
 
-    const { name, email, password } = await validationResult.params!;
+    const { name, email, password, phone } = await validationResult.params!;
 
     try {
         const existingUser = await prisma.user.findUnique({
@@ -35,6 +35,7 @@ export async function signUpWithCredentials(
             data: {
                 name,
                 email,
+                phoneNumber: phone
             }
         });
 
@@ -49,7 +50,7 @@ export async function signUpWithCredentials(
             }
         });
 
-        await signIn("credentials", { email, password, redirect: false })
+        await signIn("credentials", { email, password, phone, redirect: false })
 
         return { success: true }
     } catch (error) {

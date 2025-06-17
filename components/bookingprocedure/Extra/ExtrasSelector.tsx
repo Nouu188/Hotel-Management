@@ -204,7 +204,7 @@ const ExtrasSelector = ({ isOpen, onToggle, onComplete, completedPrev }: ExtrasS
                             <div className='relative h-11'>
                                 <button 
                                     onClick={onComplete} 
-                                    className={cn('py-2 mr-4 px-8 min-h-10 cursor-pointer hover:border-1 text-[#066A92] hover:border-[#066A92] rounded-sm')}
+                                    className={('py-2 mr-4 px-8 min-h-10 cursor-pointer hover:border-1 text-[#066A92] hover:border-[#066A92] rounded-sm')}
                                 >
                                     Skip
                                 </button>     

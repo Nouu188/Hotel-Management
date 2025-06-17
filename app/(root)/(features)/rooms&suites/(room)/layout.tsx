@@ -4,7 +4,6 @@ import { generateLabel } from "@/components/Breadcrumbs";
 import RoomTypeInBrief from "@/components/RoomTypeInBrief";
 import { roomTypeInBrief } from "@/constants/roomTypeInBrief";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
 
 function getRandomInt(min: number, max: number):number {
     min = Math.ceil(min);

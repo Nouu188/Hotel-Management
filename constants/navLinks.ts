@@ -63,3 +63,4 @@ export const navLinks = [
         label: "LOYAL GUEST",
     },
 ]
+

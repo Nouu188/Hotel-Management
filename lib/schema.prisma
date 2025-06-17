@@ -12,6 +12,10 @@ model User {
   id        String    @id @default(uuid())
   name      String
   email     String    @unique
+  birthDay  DateTime?
+  phoneNumber   String?
+  image         String?
+  gender    String?
   location  String?
   role      String    @default("USER")
   createdAt DateTime  @default(now())
@@ -23,7 +27,6 @@ model User {
 model Account {
   id                String   @id @default(uuid())
   userId            String   @unique
-  image             String?
   password          String?
   provider          String
   providerAccountId String   @unique
@@ -79,7 +82,7 @@ model BookingGuest {
   email             String
   personalRequest   String?
   planedArrivalTime String
-  phone             String?
+  phoneNumber             String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   booking           Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
@@ -189,4 +192,30 @@ enum StaffRole {
   RECEPTIONIST
   RESERVATION
   CASHIER
+}
+
+model Notification {
+  id            String           @id @default(uuid())
+  recipientId   String           // (có thể là User hoặc Staff)
+  recipientType String           // Để phân biệt người nhận là "USER" hay "STAFF"
+  type          NotificationType 
+  message       String           
+  isRead        Boolean          @default(false) 
+  relatedId     String?          // ID liên quan đến thông báo, ví dụ: bookingId, billId
+  createdAt     DateTime         @default(now())
+}
+
+enum NotificationType {
+  // Cho User
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  PAYMENT_SUCCESS
+  CHECKIN_REMINDER
+  CHECKOUT_REMINDER
+  NEW_PROMOTION
+
+  // Cho Staff
+  NEW_BOOKING_CREATED
+  GUEST_REQUEST
+  PAYMENT_RECEIVED
 }

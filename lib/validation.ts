@@ -23,6 +23,13 @@ export const SignUpSchema = z.object({
         .regex(/^[a-zA-Z0-9_]+$/, {
             message: "Name can only contain letters",
         }),
+    phone: z
+      .string()
+      .min(3, { message: "Phone number must be at least 3 characters long." })
+      .max(12, { message: "Phone number cannot exceed 12 characters." })
+      .regex(/^[0-9]+$/, {
+        message: "Phone number can only contain numbers.",
+      }),
     password: z
         .string()
         .min(6, { message: "Password must be at least 6 characters long." })
@@ -85,9 +92,38 @@ export const UserSchema = z.object({
   name: z.string().min(1, { message: "Name is required." }),
   email: z.string().email({ message: "Please provide a valid email address." }),
   image: z.string().url({ message: "Please provide a valid URL." }).optional(),
-  location: z.string().optional(),
+  location: z.string().optional().or(z.literal('')),
+  birthDay: z.string().refine(
+    (val) => !isNaN(Date.parse(val)),
+    { message: "Invalid date format." }
+  ).optional(), 
+  gender: z.string().optional(), 
+  phoneNumber: z.string()
+    .min(9, "Invalid phone number")
+    .max(15, "Invalid phone number")
+    .optional()
+    .or(z.literal('')), 
 });
 
-export const RoomSchema = z.object({
+export const UserProfileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 letters").max(50),
+  image: z.string().optional(),
+  gender: z.string().optional(),
+  birthDay: z.object({
+    day: z.string(),
+    month: z.string(),
+    year: z.string(),
+  }).optional(),
   
-})
+  phoneNumber: z.string()
+    .min(9, "Invalid phone number")
+    .max(15, "Invalid phone number")
+    .optional()
+    .or(z.literal('')), 
+    
+  location: z.string()
+    .max(100, "Location too long")
+    .optional()
+    .or(z.literal('')), 
+});
+

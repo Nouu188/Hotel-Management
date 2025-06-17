@@ -84,7 +84,10 @@ const AuthForm = <T extends FieldValues>({
                 <FormLabel className="paragraph-medium text-md playfair">
                   {field.name === "email"
                     ? "Email Address"
-                    : field.name.charAt(0).toUpperCase() + field.name.slice(1)}
+                    : field.name === "phone" 
+                      ? "Phone Number"
+                      : field.name.charAt(0).toUpperCase() + field.name.slice(1)
+                  }
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -94,6 +97,7 @@ const AuthForm = <T extends FieldValues>({
                     className="min-h-12 rounded-sm bg-white border-black"
                   />
                 </FormControl>
+                
                 <FormMessage />
               </FormItem>
             )}

@@ -25,7 +25,12 @@ export interface RoomTypeInBriefProps {
 
 const RoomTypeInBrief = ( item: RoomTypeInBriefProps ) => {
   const pathname = usePathname();
-  const plannedPathname = removeLastSegment(pathname);
+  let plannedPathname = removeLastSegment(pathname);
+
+  if(pathname !== plannedPathname) {
+    plannedPathname = pathname;
+
+  }
   const router = useRouter();
 
   return (
@@ -70,7 +75,7 @@ const RoomTypeInBrief = ( item: RoomTypeInBriefProps ) => {
         <div className="flex justify-center gap-5">
             <BookARoomButton />   
             <Button onClick={() => {
-                router.push(`${plannedPathname}/${generateSegmentFromLabel(item.name)}`)
+                router.push(`${process.env.NEXT_PUBLIC_API_BASE_URL}/${plannedPathname}/${generateSegmentFromLabel(item.name)}`)
             }} className="hover:text-white hover:bg-[#bf882e] hover:border-[#bf882e] text-[12px] max-h-[32px] cursor-pointer rounded-none bg-transparent text-gray-700 border-1 border-black">
                 More Info
                 <ArrowRight/>

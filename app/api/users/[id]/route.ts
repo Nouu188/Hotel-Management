@@ -28,6 +28,39 @@ export async function GET(
     }
 }
 
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ id: string }>}
+) {
+    const { id } = await params;
+    if (!id) throw new NotFoundError("User");
+
+    try {
+        const body = await request.json();
+        const validatedData = UserSchema.partial().safeParse(body);
+
+        if(!validatedData.success) {
+            throw new ValidationError(validatedData.error.flatten().fieldErrors);
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id },
+            data: validatedData.data
+        });
+
+        if(!updatedUser) {
+            throw new NotFoundError("User");
+        }
+
+        return NextResponse.json(
+            { success: true, data: updatedUser },
+            { status: 200 }
+        );
+    } catch (error) {
+        return handleError(error, "api") as ApiErrorResponse;
+    }
+}
+
 export async function PUT(
     request: Request,
     { params }: { params: Promise<{ id: string }> }

@@ -11,7 +11,7 @@
   "prisma": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "start": "prisma migrate deploy && next start", 
+    "start": "prisma migrate deploy && next start",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "schema": "lib/schema.prisma",
@@ -31,6 +31,7 @@
     "@radix-ui/react-menubar": "^1.1.6",
     "@radix-ui/react-navigation-menu": "^1.2.13",
     "@radix-ui/react-popover": "^1.1.6",
+    "@radix-ui/react-radio-group": "^1.3.7",
     "@radix-ui/react-select": "^2.1.6",
     "@radix-ui/react-separator": "^1.1.2",
     "@radix-ui/react-slot": "^1.2.3",
