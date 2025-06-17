@@ -5,6 +5,7 @@ interface AuthCredentials {
     name: string;
     email: string;
     password: string;
+    phone: string;
 }
 
 interface SignInWithOAuthParams {
