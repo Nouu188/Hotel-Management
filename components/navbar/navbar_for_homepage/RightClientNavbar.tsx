@@ -48,7 +48,7 @@ const RightClientNavbar = () => {
                             <Menubar className="bg-transparent border-none">
                                 <MenubarMenu>
                                     <MenubarTrigger className="border-none !bg-transparent">
-                                    <Avatar className="w-[37px] h-[37px] flex justify-end">
+                                    <Avatar className="w-[37px] h-[37px] cursor-pointer flex justify-end">
                                         <AvatarImage src="https://i.pinimg.com/736x/ec/b2/f8/ecb2f885b51eeb0204b6f2be4c19b8cf.jpg" />
                                     </Avatar>
                                     </MenubarTrigger>
