@@ -56,7 +56,7 @@ const RightClientNavbar = () => {
                                     <MenubarContent align="center" style={{ width: "100px", minWidth: "unset" }} className="playfair z-300 flex flex-col justify-center text-md">
                                         <MenubarItem 
                                             className="flex whitespace-nowrap gap-3 hover:bg-transparent hover:text-[#BF882E] ease-in-out transition-all duration-300 cursor-pointer" 
-                                            onClick={() => router.push("/user/dashboard?type=profile")}
+                                            onClick={() => router.push("/user/profile")}
                                         >
                                             Dashboard
                                         </MenubarItem>

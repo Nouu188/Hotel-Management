@@ -99,6 +99,8 @@ export async function POST(request: Request) {
         skipDuplicates: true,
       });
 
+      console.log(bookingGuest)
+
       //Create new BookingGuest
       const newBookingGuest = await tx.bookingGuest.create({
         data: {
@@ -148,6 +150,8 @@ export async function POST(request: Request) {
         newUsingService,
         newBookingGuest,
       };
+    }, {
+      timeout: 10000,
     });
 
     return NextResponse.json({ success: true, data: result }, { status: 201 });

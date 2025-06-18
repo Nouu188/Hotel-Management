@@ -13,7 +13,6 @@ import { useState } from 'react';
 import { SectionName } from '@/components/bookingprocedure/BookingProcedure';
 import { ClientDetailsFormValues } from './useClientDetailForm';
 
-
 export const useBooking = () => {
   const router = useRouter();
   const searchParams = useSearchParams();

@@ -86,10 +86,47 @@ const ProfileView = () => {
         return <ProfileSkeleton />;
     }
 
+    const onUploadAvatar = async (file: string | undefined) => {
+        const blobUrl = file; 
+        if(!blobUrl) return null;
+
+        const response = await fetch(blobUrl);
+        const blob = await response.blob();
+
+        const fileObject = new File([blob], "avatar.png", {
+            type: blob.type,
+            lastModified: Date.now(),
+        });
+
+        const formData = new FormData();
+        formData.append('file', fileObject);
+
+        const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!res.ok) {
+            throw new Error('Upload failed');
+        }
+
+        const uploadedAvatar = await res.json();
+
+        if (!uploadedAvatar?.data?.secure_url) {
+            throw new Error('Cloudinary response missing secure_url');
+        }
+
+        return uploadedAvatar.data.secure_url;
+    };
+
     async function onSubmit(values: UserProfileFormValues) {
         if (!session?.user?.id) {
             throw new NotFoundError("User not found");
         }
+        
+        //Handle upload avatar to cloudinary
+        const uploadedAvatar = await onUploadAvatar(values.image);
+        values.image = uploadedAvatar;
 
         const { day, month, year } = values.birthDay!;
 

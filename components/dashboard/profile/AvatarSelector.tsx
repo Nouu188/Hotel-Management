@@ -48,8 +48,8 @@ const AvatarSelector = () => {
                     onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                        field.onChange(file);
-                        setPreviewUrl(URL.createObjectURL(file));
+                          field.onChange(URL.createObjectURL(file));
+                          setPreviewUrl(URL.createObjectURL(file));
                         }
                     }}
                     className="hidden"
