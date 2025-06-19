@@ -5,14 +5,14 @@ import { BookingDetails, SignInWithOAuthParams } from "@/types/action";
 import { DateRange } from "react-day-picker";
 
 
-const API_BASE_URL = `https://hotel-management-production-c212.up.railway.app/api`;
+const API_BASE_URL = `http://localhost:3000/api`;
 
 export const api = {
     auth: {
         oAuthSignIn: ({
             user,
             provider,
-            providerAccountId,
+            providerAccountId
         }: SignInWithOAuthParams) => 
             fetchHandler(`${API_BASE_URL}/auth/${ROUTES.SIGN_IN_WITH_OAUTH}`, {
                 method: "POST",
@@ -46,6 +46,10 @@ export const api = {
         getAll: () => fetchHandler(`${API_BASE_URL}/accounts`),
         getById: (id: string) => fetchHandler(`${API_BASE_URL}/accounts/${id}`),
         getByProvider: (providerAccountId: string) => fetchHandler(`${API_BASE_URL}/accounts/provider`, {
+            method: "POST",
+            body: JSON.stringify({ providerAccountId })
+        }),
+        getByProviderAttachUser: (providerAccountId: string) => fetchHandler(`${API_BASE_URL}/accounts/provider/user`, {
             method: "POST",
             body: JSON.stringify({ providerAccountId })
         }),

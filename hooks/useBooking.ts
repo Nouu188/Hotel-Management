@@ -7,11 +7,12 @@ import { toast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import { AppDispatch, RootState } from '@/store/store';
 import { clearAllRoomSelections } from '@/store/slices/selectedHotelRoomTypesSlice';
-import { BookingDetails, ClientApiBookingRoomItem } from '@/types/action';
+import { ClientApiBookingRoomItem } from '@/types/action';
 import ROUTES from '@/constants/route';
 import { useState } from 'react';
 import { SectionName } from '@/components/bookingprocedure/BookingProcedure';
 import { ClientDetailsFormValues } from './useClientDetailForm';
+import { BookingRequestBody } from '@/lib/validation';
 
 export const useBooking = () => {
   const router = useRouter();
@@ -57,86 +58,101 @@ export const useBooking = () => {
     setActiveSection(newActiveSection);
   }
 
-  const handleBookingSubmit = async (clientDetailsValues: ClientDetailsFormValues) => {
-    if (!session?.user?.id) {
-      toast({ title: "Authentication Error", description: "You must be signed in to book." });
-      return;
-    }
-    const fromDateStr = searchParams.get("fromDate");
-    const toDateStr = searchParams.get("toDate");
-    if (!fromDateStr || !toDateStr) {
-      toast({ title: "Error", description: "Date range is missing." });
-      return;
-    }
-    if (selectedHotelRoomTypes.length === 0) {
-      toast({ title: "Error", description: "No rooms selected for booking." });
-      return;
-    }
 
-    try {
-      const aggregatedRoomItemsMap = new Map<string, ClientApiBookingRoomItem>();
-
-      selectedHotelRoomTypes.forEach(instance => {
-        const hotelBranchRoomTypeId = instance.originalRoomData.id;
-        const existingItem = aggregatedRoomItemsMap.get(hotelBranchRoomTypeId);
-        if (existingItem) {
-          existingItem.quantityBooked += 1;
-        } else {
-          aggregatedRoomItemsMap.set(hotelBranchRoomTypeId, {
-            hotelBranchRoomTypeId,
-            quantityBooked: 1,
-          });
+    const handleBookingSubmit = async () => { 
+        if (!clientDetailsValues) {
+            toast({ title: "Error", description: "Vui lòng hoàn thành thông tin chi tiết của bạn." });
+            setActiveSection('details');
+            return;
         }
-      });
-      const finalBookingRoomItems = Array.from(aggregatedRoomItemsMap.values());
+        if (!session?.user?.id) {
+            toast({ title: "Authentication Error", description: "Bạn phải đăng nhập để đặt phòng." });
+            return;
+        }
+        const fromDateStr = searchParams.get("fromDate");
+        const toDateStr = searchParams.get("toDate");
+        if (!fromDateStr || !toDateStr) {
+            toast({ title: "Error", description: "Khoảng ngày không hợp lệ." });
+            return;
+        }
+        if (selectedHotelRoomTypes.length === 0) {
+            toast({ title: "Error", description: "Chưa có phòng nào được chọn." });
+            return;
+        }
 
-      const aggregatedService = selectedExtra;
-      
-      const finalBookingService = aggregatedService
-        .filter(instance => instance.quantityFinal !== 0)
-        .map(instance => ({
-          serviceName: instance.name,
-          quantity: instance.quantityFinal,
-          totalPrice: instance.priceFinal,
-        }));
+        const fromDateISO = new Date(`${fromDateStr}T00:00:00.000Z`).toISOString();
+        const toDateISO = new Date(`${toDateStr}T00:00:00.000Z`).toISOString();
 
-      const bookingDetails: BookingDetails = {
-        bookingGuest: {
-          firstName: clientDetailsValues.firstName,
-          lastName: clientDetailsValues.lastName,
-          email: clientDetailsValues.email,
-          personalRequest: clientDetailsValues.personalRequest,
-          planedArrivalTime: clientDetailsValues.arrivalTime,
-        },
-        bookingData: {
-          userId: session.user.id,
-          fromDate: new Date(fromDateStr),
-          toDate: new Date(toDateStr),
-        },
-        usingServiceItems: finalBookingService,
-        bookingRoomItems: finalBookingRoomItems,
-      };
+        try {
+          console.log("Check: ", fromDateISO, toDateISO)
+            // Phần tổng hợp phòng và dịch vụ đã đúng, giữ nguyên
+            const aggregatedRoomItemsMap = new Map<string, ClientApiBookingRoomItem>();
+            selectedHotelRoomTypes.forEach(instance => {
+                const hotelBranchRoomTypeId = instance.originalRoomData.id;
+                const existingItem = aggregatedRoomItemsMap.get(hotelBranchRoomTypeId);
+                if (existingItem) {
+                    existingItem.quantityBooked += 1;
+                } else {
+                    aggregatedRoomItemsMap.set(hotelBranchRoomTypeId, {
+                        hotelBranchRoomTypeId,
+                        quantityBooked: 1,
+                    });
+                }
+            });
+            const finalBookingRoomItems = Array.from(aggregatedRoomItemsMap.values());
 
-      const res = await api.booking.create(bookingDetails);
+            const finalBookingService = selectedExtra
+                .filter(instance => instance.quantityFinal > 0)
+                .map(instance => {
+                    if (!instance.id) {
+                        throw new Error(`Service "${instance.name}" is missing an ID.`);
+                    }
+                    return {
+                        serviceId: instance.id,
+                        quantity: instance.quantityFinal,
+                    };
+                });
 
-      if (res.success && res.data) {
-        toast({
-          title: "Booking Successful!",
-          description: "Your booking has been confirmed. Welcome to La Sieste.",
-        });
-        dispatch(clearAllRoomSelections());
-        router.push(ROUTES.HOME); 
-      } else {
-        throw new Error("Could not complete your booking. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error creating booking:", error);
-      toast({
-        title: "Booking Error",
-        description: error instanceof Error ? error.message : "An unexpected error occurred.",
-      });
-    } 
-  };
+            // Tạo payload với dữ liệu từ state `clientDetailsValues`
+            const bookingDetails: BookingRequestBody = { 
+                bookingGuest: {
+                    firstName: clientDetailsValues.firstName,
+                    lastName: clientDetailsValues.lastName,
+                    email: clientDetailsValues.email,
+                    personalRequest: clientDetailsValues.personalRequest,
+                    planedArrivalTime: clientDetailsValues.arrivalTime,
+                    phoneNumber: clientDetailsValues.phone,
+                },
+                bookingData: {
+                    userId: session.user.id,
+                    fromDate: fromDateISO,
+                    toDate: toDateISO,   
+                },
+                usingServiceItems: finalBookingService,
+                bookingRoomItems: finalBookingRoomItems,
+            };
+            
+            const res = await api.booking.create(bookingDetails);
+
+            if (res.success && res.data) {
+                toast({
+                    title: "Booking Successful!",
+                    description: "Your booking has been confirmed. Welcome to La Sieste.",
+                });
+                dispatch(clearAllRoomSelections());
+                router.push(ROUTES.HOME); 
+            } else {
+                throw new Error("Could not complete your booking. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error creating booking:", error);
+            toast({
+                title: "Booking Error",
+                description: error instanceof Error ? error.message : "An unexpected error occurred.",
+            });
+        } 
+    };
+
 
   return { 
     handleBookingSubmit,

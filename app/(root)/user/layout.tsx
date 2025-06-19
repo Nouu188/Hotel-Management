@@ -13,6 +13,8 @@ export default function Layout({
   children: React.ReactNode;
 }>) {
     const { data: session } = useSession();
+    const avatarUrl = session?.user?.image;
+    
     return (
         <div lang="en" className="bg-[#eff8fc]"> 
             <section className="relative w-full h-[310px]"> 
@@ -21,7 +23,7 @@ export default function Layout({
                     fill 
                     className="object-cover" 
                     alt="layout"
-                    />
+                />
 
                 <div 
                     className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/36 to-black/40" 
@@ -33,7 +35,16 @@ export default function Layout({
                     <div className="flex items-center border-b-1 py-4 gap-4 mb-4">
                         <div>
                             <Avatar className="w-[60px] h-[60px] flex justify-end">
-                                <AvatarImage src="https://i.pinimg.com/736x/ec/b2/f8/ecb2f885b51eeb0204b6f2be4c19b8cf.jpg" />
+                                {avatarUrl ? (
+                                    <AvatarImage className="object-cover" src={avatarUrl} alt="User avatar" />
+                                ) : (
+                                    <Image
+                                        src="/icons/user.svg"
+                                        fill
+                                        alt="User avatar"
+                                        className="object-cover rounded-full p-4 bg-gray-100"
+                                    />
+                                )}
                             </Avatar>
                         </div>
 

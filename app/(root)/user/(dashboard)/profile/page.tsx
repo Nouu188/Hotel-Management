@@ -46,7 +46,7 @@ const ProfileView = () => {
         },
     });
 
-    // --- NEW: Fetch Profile Data on Mount ---
+    // Fetch Profile Data on Mount ---
     useEffect(() => {
         const fetchProfile = async () => {
             if (!session?.user?.id) return;
@@ -148,8 +148,17 @@ const ProfileView = () => {
                     description: "Your profile has been updated.",
                 });
                 // Cập nhật session để tên/ảnh mới hiển thị ngay lập tức ở nơi khác
-                await updateSession({ user: { ...session.user, name: res.data.name, image: res.data.image } });
-                setUserProfile(res.data); // Cập nhật state local
+                await updateSession({
+                    ...session,
+                    user: {
+                        ...session.user, 
+                        name: res.data.name,   
+                        image: res.data.image, 
+                    },
+                });
+                router.refresh();
+
+                setUserProfile(res.data);
             } else {
                 throw new Error("Could not update your profile.");
             }

@@ -17,6 +17,9 @@ model User {
   image         String?
   gender    String?
   location  String?
+
+  status        UserStatus  @default(ACTIVE)
+
   role      String    @default("USER")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -56,11 +59,15 @@ model HotelBranchRoomType {
   hotelBranchId String
   roomTypeId    String
   quantity      Int
+
+  status          InventoryStatus @default(AVAILABLE)
+
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   bookingItems  BookingRoomItem[]
   hotelBranch   HotelBranch       @relation(fields: [hotelBranchId], references: [id], onDelete: Cascade)
   roomType      RoomType          @relation("RoomTypeToHotelBranchRoomType", fields: [roomTypeId], references: [id], onDelete: Cascade)
+  availabilities  RoomAvailability[]
 
   @@unique([hotelBranchId, roomTypeId])
 }
@@ -72,6 +79,18 @@ model HotelBranch {
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   hotelBranchRoomTypes HotelBranchRoomType[]
+}
+
+model RoomAvailability {
+  id                    String @id @default(uuid())
+  date                  DateTime @db.Date
+  hotelBranchRoomTypeId String
+  totalRooms            Int 
+  bookedRooms           Int @default(0) 
+  
+  hotelBranchRoomType   HotelBranchRoomType @relation(fields: [hotelBranchRoomTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([date, hotelBranchRoomTypeId]) // Đảm bảo mỗi ngày chỉ có 1 bản ghi cho 1 loại phòng
 }
 
 model BookingGuest {
@@ -93,6 +112,9 @@ model Booking {
   userId           String
   fromDate         DateTime
   toDate           DateTime
+
+  status           BookingStatus     @default(PENDING)
+
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   bill             Bill?
@@ -121,8 +143,10 @@ model Bill {
   staffId       String
   checkIn       DateTime
   checkOut      DateTime
-  paymentMethod PaymentMethod
+  paymentMethod PaymentMethod @default(E_WALLET)
+
   status        BillStatus
+
   voucher       Float         @default(0)
   finalAmount   Float
   createdAt     DateTime      @default(now())
@@ -136,6 +160,9 @@ model Staff {
   name       String
   role       StaffRole
   enrollDate DateTime
+
+  status     StaffStatus @default(ACTIVE)
+
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   bills      Bill[]
@@ -147,6 +174,9 @@ model UsingService {
   serviceId String
   quantity  Int      @default(1)
   notes     String?
+
+  status    UsingServiceStatus @default(SCHEDULED)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
@@ -163,10 +193,15 @@ model Service {
   description   String?
   priceType     String?
   notes         String?
+
+  status        ServiceStatus @default(ACTIVE)
+
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   usingServices UsingService[]
 }
+
+// -- ENUMS --
 
 enum PaymentMethod {
   CASH
@@ -174,6 +209,7 @@ enum PaymentMethod {
   CREDITCARD
   DEBITCARD
   PREPAIDCARD
+  PENDING
 }
 
 enum BillStatus {
@@ -201,7 +237,7 @@ model Notification {
   type          NotificationType 
   message       String           
   isRead        Boolean          @default(false) 
-  relatedId     String?          // ID liên quan đến thông báo, ví dụ: bookingId, billId
+  relatedId     String?          // ID liên quan đến thông báo
   createdAt     DateTime         @default(now())
 }
 
@@ -218,4 +254,48 @@ enum NotificationType {
   NEW_BOOKING_CREATED
   GUEST_REQUEST
   PAYMENT_RECEIVED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  IN_PROGRESS
+  COMPLETED
+  REFUNDED
+  FAIL_PAYMENT
+}
+
+enum UserStatus {
+  ACTIVE   
+  SUSPENDED // Bị khóa tạm thời
+  DELETED   
+}
+
+enum StaffStatus {
+  ACTIVE      // Đang làm việc
+  ON_LEAVE    // Đang nghỉ phép
+  TERMINATED  // Đã nghỉ việc
+}
+
+enum InventoryStatus {
+  AVAILABLE         // Sẵn sàng cho khách đặt
+  UNDER_MAINTENANCE // Đang bảo trì, không hiển thị để đặt
+  BLOCKED           // Bị khóa tạm thời vì lý do khác
+}
+
+enum ServiceStatus {
+  ACTIVE      // Dịch vụ đang được cung cấp
+  INACTIVE    // Dịch vụ tạm ngưng
+}
+
+enum UsingServiceStatus {
+  SCHEDULED    // Dịch vụ được đặt trước, chờ đến ngày thực hiện
+  REQUESTED    // Khách vừa yêu cầu, đang chờ xử lý
+  IN_PROGRESS  // Nhân viên đang thực hiện
+  COMPLETED    // Đã hoàn thành, sẵn sàng để tính tiền
+  CANCELLED    // Yêu cầu đã bị khách hoặc nhân viên hủy
+  BILLED       // Đã được thêm vào hóa đơn cuối cùng và tính tiền
 }

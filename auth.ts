@@ -50,34 +50,46 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, account, trigger, session }) {
       if(account) {
-        const { data: existingAccount, success } = (await api.accounts.getByProvider(
-          account.type === "credentials"
+        const { data: existingAccount, success } = (await api.accounts.getByProviderAttachUser(
+          account?.type === "credentials"
             ? token.email!
-            : account.providerAccountId
-        )) as ActionResponse<Account>;
+            : account?.providerAccountId!
+        )) as ActionResponse<Account & User>;
 
         if(!success || !existingAccount) return token;
 
         const userId = existingAccount.userId;
 
-        if(userId)
+        if (userId) {
           token.userId = userId.toString();
 
-        const user = await prisma.user.findUnique({
-          where: { id: userId },
-        });
+          const userInfo = await prisma.user.findUnique({
+            where: { id: userId },
+          });
 
-        if(user?.role)
-          token.role = user.role as string;
-        
+          if (userInfo) {
+            token.name = userInfo.name;
+            token.image = userInfo.image;
+            token.role = userInfo.role;
+          }
+        }
+      }
+
+      if(trigger === "update" && session?.user) {
+        token.name = session.user.name;
+        token.image = session.user.image;
       }
 
       return token;
     },
+
     async session({ session, token }) {
       session.user.id = token.userId as string;
+      session.user.name = token.name as string;
+      session.user.image = token.image as string;
+      session.user.role = token.role as string;
 
       return session;
     },

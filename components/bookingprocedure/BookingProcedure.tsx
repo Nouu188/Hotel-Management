@@ -20,7 +20,7 @@ const BookingProcedure = () => {
 
     const onFinalSubmit = () => {
       if (clientDetailsValues) {
-        handleBookingSubmit(clientDetailsValues);
+        handleBookingSubmit();
       } else {
         toast({
           title: "Incomplete Information",

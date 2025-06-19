@@ -5,146 +5,97 @@ import { NextResponse } from "next/server";
 import { parseISO } from 'date-fns';
 // Đảm bảo type này được import đúng và có trường availabilityStatus, originalQuantity, quantity (là remaining)
 import { HotelBranchRoomTypeItemWithStatus } from "@/types/roomType";
-
-interface GuestAllocationItem {
-  adults: number;
-  children: number;
-  infants: number;
-}
-
-interface RequestBody {
-  guestAllocations: GuestAllocationItem[];
-  branchName: string;
-  dateRange?: {
-    from?: string;
-    to?: string;
-  };
-}
+import { RoomSearchSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as RequestBody;
-    const { guestAllocations, branchName, dateRange } = body;
+// --- BƯỚC 1: VALIDATE & TRÍCH XUẤT YÊU CẦU ---
+    const body = await request.json();
+    const validation = RoomSearchSchema.safeParse(body);
 
-    if (!guestAllocations || !branchName || !dateRange?.from || !dateRange?.to) {
-      return NextResponse.json(
-        { success: false, message: "Missing required fields (guestAllocations, branchName, dateRange with from/to)." },
-        { status: 400 }
-      );
+    if (!validation.success) {
+      return NextResponse.json({ success: false, message: "Invalid input.", errors: validation.error.flatten() }, { status: 400 });
     }
 
-    const fromDateRequest = parseISO(dateRange.from);
-    const toDateRequest = parseISO(dateRange.to);
+    const { guestAllocations, branchName, dateRange } = validation.data;
+    const fromDate = parseISO(dateRange.from);
+    const toDate = parseISO(dateRange.to);
 
-    if (isNaN(fromDateRequest.getTime()) || isNaN(toDateRequest.getTime()) || fromDateRequest >= toDateRequest) {
-        return NextResponse.json(
-            { success: false, message: "Invalid date range." },
-            { status: 400 }
-        );
-    }
+    // Tính toán các yêu cầu về sức chứa và số lượng phòng
+    const requiredCapacities = guestAllocations.map(g => g.adults + g.children); // Trẻ sơ sinh không tính vào capacity
+    const totalRoomsRequested = guestAllocations.length;
+    const maxCapacityNeeded = Math.max(...requiredCapacities);
 
-    const totalGuestPerRoomRequest = guestAllocations.map(
-      (item: GuestAllocationItem) => item.adults + item.children + item.infants
-    );
-
-    const minCapacityNeeded = totalGuestPerRoomRequest.length > 0 ? Math.min(...totalGuestPerRoomRequest) : 0;
-    if (totalGuestPerRoomRequest.length === 0 && minCapacityNeeded <=0) { // Sửa điều kiện: nếu không có guest, minCapacityNeeded sẽ là Infinity
-        return NextResponse.json(
-            { success: false, message: "Invalid guest allocations." },
-            { status: 400 }
-        );
-    }
-
-
-    const candidateHotelBranchRoomTypes = await prisma.hotelBranchRoomType.findMany({
+// --- BƯỚC 2: TÌM CÁC LOẠI PHÒNG ỨNG VIÊN ---
+    // Tìm tất cả các loại phòng tại chi nhánh có sức chứa đủ cho nhóm đông nhất
+    const candidateRoomTypes = await prisma.hotelBranchRoomType.findMany({
       where: {
-        hotelBranch: {
-          name: branchName,
-        },
-        roomType: {
-          capacity: {
-            gte: minCapacityNeeded > 0 ? minCapacityNeeded : 0,
-          },
-        },
+        hotelBranch: { name: branchName },
+        roomType: { capacity: { gte: maxCapacityNeeded }},
+        status: "AVAILABLE"
       },
       include: {
         roomType: true,
         hotelBranch: true,
-        bookingItems: {
-          where: {
-            booking: {
-              AND: [
-                { fromDate: { lt: toDateRequest } },
-                { toDate: { gt: fromDateRequest } },
-              ],
-            },
-          },
-          include: {
-            booking: true,
-          },
-        },
-      },
+      }
     });
 
-    const roomProcessingPromises = candidateHotelBranchRoomTypes.map(async (hbrt) => { 
-      let totalBookedInPeriod = 0;
-      hbrt.bookingItems.forEach(bookingItem => {
-        const bookingStartDate = bookingItem.booking.fromDate;
-        const bookingEndDate = bookingItem.booking.toDate;
-        
-        if (bookingStartDate < toDateRequest && bookingEndDate > fromDateRequest) {
-          totalBookedInPeriod += bookingItem.quantityBooked;
-        }
+    if (candidateRoomTypes.length === 0) {
+      return NextResponse.json({ success: true, data: [] }, { status: 200 });
+    }
+
+// --- BƯỚC 3: KIỂM TRA KHO PHÒNG THEO NGÀY CHO TỪNG ỨNG VIÊN ---
+    const roomProcessingPromises = candidateRoomTypes.map(async (hbrt) => {
+      const availabilityResult = await prisma.roomAvailability.aggregate({
+        where: {
+          hotelBranchRoomTypeId: hbrt.id,
+          date: { gte: fromDate, lt: toDate },
+        },
+        _max: { bookedRooms: true },
+        _count: { date: true },
       });
-
-      const remainingQuantity = hbrt.quantity - totalBookedInPeriod;
-      const actualRemainingQuantity = remainingQuantity > 0 ? remainingQuantity : 0;
-
-      let availabilityStatus: "available" | 'sold_out' | "limited" = "sold_out";
-      if(actualRemainingQuantity > 0) {
-        availabilityStatus = actualRemainingQuantity < 5 ? "limited" : "available";
-      }
       
+      const numberOfNights = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24));
+  
+      let availableQuantity = 0;
+  
+      if(availabilityResult._count.date === numberOfNights) {
+        const maxBooked = availabilityResult._max.bookedRooms ?? 0;
+        availableQuantity = hbrt.quantity - maxBooked;
+      }
+
+      // Xác định trạng thái phòng
+      let availabilityStatus: "available" | 'sold_out' | "limited" = "sold_out";
+      if(availableQuantity > 0) {
+        availabilityStatus = availableQuantity < 5 ? "limited" : "available";
+      }
+
       const roomTypeItem: HotelBranchRoomTypeItemWithStatus = {
         ...hbrt,
-        remainingQuantity: actualRemainingQuantity, 
+        hotelBranch: hbrt.hotelBranch, 
+        remainingQuantity: availableQuantity, 
         availabilityStatus: availabilityStatus,
       };
       return roomTypeItem;
     });
 
-    const allProcessedRooms = await Promise.all(roomProcessingPromises);
+      const allProcessedRooms = await Promise.all(roomProcessingPromises);
+      const availableRooms = allProcessedRooms.filter(room => room.quantity > 0);
 
-    // Lọc những phòng phù hợp với ÍT NHẤT MỘT yêu cầu guestCount từ client
-    const suitableRooms = allProcessedRooms.filter(room =>
-      totalGuestPerRoomRequest.some(guestCount => room.roomType.capacity >= guestCount)
-    );
-    
-    const uniqueRoomsMap = new Map<string, HotelBranchRoomTypeItemWithStatus>(); // Sửa type của Map
-    suitableRooms.forEach(room => {
-      if (!uniqueRoomsMap.has(room.id)) {
-        uniqueRoomsMap.set(room.id, room);
+      // Kiểm tra xem tổng số phòng còn trống có đủ cho yêu cầu không
+      const totalAvailableRooms = availableRooms.reduce((sum, room) => sum + room.quantity, 0);
+      if (totalAvailableRooms < totalRoomsRequested) {
+          // Nếu tổng số phòng còn lại của tất cả các loại cũng không đủ, trả về mảng rỗng
+          return NextResponse.json({ success: true, data: [] }, { status: 200 });
       }
-    });
-    let uniqueSuitableRooms = Array.from(uniqueRoomsMap.values());
 
-    const statusPriority = {
-      'limited': 1,
-      'available': 2,
-      'sold_out': 3
-    };
+      // Sắp xếp theo trạng thái: 'limited' ưu tiên, sau đó đến 'available'
+      const statusPriority = { 'limited': 1, 'available': 2, 'sold_out': 3 };
+      allProcessedRooms.sort((a, b) => statusPriority[a.availabilityStatus] - statusPriority[b.availabilityStatus]);
 
-    uniqueSuitableRooms.sort((a, b) => {
-      const priorityA = statusPriority[a.availabilityStatus];
-      const priorityB = statusPriority[b.availabilityStatus];
-      return priorityA - priorityB;
-    });
+      return NextResponse.json({ success: true, data: allProcessedRooms }, { status: 200 });
 
-    return NextResponse.json(
-      { success: true, data: uniqueSuitableRooms }, 
-      { status: 200 }
-    );
-  } catch (error) {
-    return handleError(error, "api") as ApiErrorResponse;
-  }
+    } catch (error) {
+      return handleError(error, "api") as ApiErrorResponse;
+    }
 }

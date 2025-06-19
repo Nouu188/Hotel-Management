@@ -29,11 +29,11 @@ interface BookingDetails {
   },
   bookingData: {
     userId: string,
-    fromDate: Date,
-    toDate: Date,
+    fromDate: string,
+    toDate: string,
   },
   usingServiceItems: {
-    serviceName: string,
+    serviceId: string,
     quantity: number,
   }[],
   bookingRoomItems: ClientApiBookingRoomItem[]

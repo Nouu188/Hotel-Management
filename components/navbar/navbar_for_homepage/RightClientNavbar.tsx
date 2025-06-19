@@ -25,6 +25,7 @@ const RightClientNavbar = () => {
     const router = useRouter();
     const { data: session } = useSession();
     const userId = session?.user?.id;
+    const avatarUrl = session?.user.image;
 
     const handleSignOut = async () => {
         await signOut({ redirect: false });
@@ -48,9 +49,17 @@ const RightClientNavbar = () => {
                             <Menubar className="bg-transparent border-none">
                                 <MenubarMenu>
                                     <MenubarTrigger className="border-none !bg-transparent">
-                                    <Avatar className="w-[37px] h-[37px] cursor-pointer flex justify-end">
-                                        <AvatarImage src="https://i.pinimg.com/736x/ec/b2/f8/ecb2f885b51eeb0204b6f2be4c19b8cf.jpg" />
-                                    </Avatar>
+                                        {avatarUrl ? (
+                                            <Avatar className="w-[37px] h-[37px] cursor-pointer flex justify-end">
+                                                <AvatarImage src={avatarUrl} />
+                                            </Avatar>
+                                        ) : (
+                                            <img
+                                                src="/icons/user.svg"
+                                                alt="Default avatar"
+                                                className="w-28 h-28 object-cover rounded-full p-4 bg-gray-100"
+                                            />
+                                        )}
                                     </MenubarTrigger>
 
                                     <MenubarContent align="center" style={{ width: "100px", minWidth: "unset" }} className="playfair z-300 flex flex-col justify-center text-md">

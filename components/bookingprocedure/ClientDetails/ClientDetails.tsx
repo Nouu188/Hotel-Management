@@ -10,7 +10,7 @@ import { arrivalTime } from '@/constants/arrivalTime';
 import { cn } from '@/lib/utils';
 import { Textarea } from '../../ui/textarea';
 import { FormInputField, FormSelectField } from '@/components/FormFieldInput';
-import { ClientDetailsFormValues, useClientDetailsForm } from '@/hooks/useClientDetailForm';
+import {  ClientDetailsFormValues, useClientDetailsForm } from '@/hooks/useClientDetailForm';
 
 const inputFields = [
     { name: 'firstName', placeholder: 'First name' },

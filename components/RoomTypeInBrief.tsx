@@ -27,9 +27,8 @@ const RoomTypeInBrief = ( item: RoomTypeInBriefProps ) => {
   const pathname = usePathname();
   let plannedPathname = removeLastSegment(pathname);
 
-  if(pathname !== plannedPathname) {
+  if(plannedPathname === "/") {
     plannedPathname = pathname;
-
   }
   const router = useRouter();
 

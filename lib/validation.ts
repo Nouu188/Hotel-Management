@@ -127,3 +127,44 @@ export const UserProfileSchema = z.object({
     .or(z.literal('')), 
 });
 
+export const BookingRequestSchema = z.object({
+  bookingGuest: z.object({
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+    email: z.string().email(),
+    planedArrivalTime: z.string(),
+    personalRequest: z.string().optional(),
+    phoneNumber: z.string().optional(),
+  }),
+  bookingData: z.object({
+    userId: z.string().uuid(),
+    fromDate: z.string(),
+    toDate: z.string(),
+  }),
+  usingServiceItems: z.array(z.object({
+    serviceId: z.string().uuid(), // Nên dùng ID thay vì tên để đảm bảo chính xác
+    quantity: z.number().min(1),
+  })).optional(),
+  bookingRoomItems: z.array(z.object({
+    hotelBranchRoomTypeId: z.string().uuid(),
+    quantityBooked: z.number().min(1),
+  })).min(1, "Phải chọn ít nhất một phòng."),
+});
+
+export type BookingRequestBody = z.infer<typeof BookingRequestSchema>;
+
+export const RoomSearchSchema = z.object({
+  branchName: z.string().min(1),
+  dateRange: z.object({
+    from: z.string().datetime(),
+    to: z.string().datetime(),
+  }),
+  guestAllocations: z.array(z.object({
+    adults: z.number().min(1),
+    children: z.number().min(0),
+    infants: z.number().min(0),
+  })).min(1, "Phải có ít nhất một yêu cầu phòng."),
+}).refine(data => new Date(data.dateRange.from) < new Date(data.dateRange.to), {
+  message: "Ngày đến phải trước ngày đi.",
+  path: ["dateRange"],
+});

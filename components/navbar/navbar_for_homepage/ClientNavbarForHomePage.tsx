@@ -38,7 +38,7 @@ const ClientNavbar = () => {
             </Link>
           ) : (
             <div>
-              <Link href={ROUTES.HOME} className="flex items-start top-0 z-100 w-[164px] h-[130px] max-sm:w-[130px] max-sm:h-[100px] max-lg:w-[140px] max-lg:[115px] max-xl:w-[150px] max-xl:h-[118px] relative transition-all duration-300 ease-in-out">
+              <Link href={ROUTES.HOME} className="flex items-start top-0 z-100 w-[164px] h-[130px] max-sm:w-[130px] max-sm:h-[100px] max-2xl:w-[140px] max-2xl:h-[118px] relative transition-all duration-300 ease-in-out">
                 <Image src="/images/10.svg" fill alt="hotel"/>
               </Link>           
             </div>

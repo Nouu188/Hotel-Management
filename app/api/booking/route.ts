@@ -1,157 +1,110 @@
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
-
-interface BookingRoomItemClientData {
-  hotelBranchRoomTypeId: string;
-  quantityBooked: number;
-}
-
-interface BookingRequestBody {
-  bookingGuest: Omit<Prisma.BookingGuestCreateInput, 'bookingId' | 'booking'>;
-  bookingData: {
-    userId: string;
-    fromDate: string;
-    toDate: string;
-  };
-  usingServiceItems?: {
-    serviceName: string;
-    quantity: number;
-  }[];
-  bookingRoomItems: BookingRoomItemClientData[];
-}
+import { parseISO } from 'date-fns';
+import {BookingRequestSchema } from "@/lib/validation";
+import { Prisma } from "@prisma/client";
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as BookingRequestBody;
-    const { bookingGuest, bookingData, usingServiceItems, bookingRoomItems: clientBookingRoomItems } = body;
-
-    // Validate input
-    if (
-      !bookingData ||
-      !bookingData.userId ||
-      !clientBookingRoomItems ||
-      !Array.isArray(clientBookingRoomItems) ||
-      clientBookingRoomItems.length === 0
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid input: 'bookingData' (with userId), and a non-empty 'bookingRoomItems' array are required.",
-        },
-        { status: 400 }
-      );
+    const body = await request.json();
+    const validation = BookingRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ success: false, message: "Invalid input.", errors: validation.error.flatten() }, { status: 400 });
     }
+    const { bookingGuest, bookingData, usingServiceItems, bookingRoomItems } = validation.data;
 
-    // Validate usingServiceItems
-    if (usingServiceItems && !Array.isArray(usingServiceItems)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid input: 'usingServiceItems' must be an array if provided." },
-        { status: 400 }
-      );
+    const fromDate = parseISO(bookingData.fromDate);
+    const toDate = parseISO(bookingData.toDate);
+
+    // ==========================================================
+    // CẢI TIẾN 1: ĐỌC DỮ LIỆU GIÁ BÊN NGOÀI TRANSACTION
+    // ==========================================================
+    // Các thao tác đọc này không cần nằm trong transaction, giúp giảm thời gian chạy của nó.
+    const roomTypeIds = bookingRoomItems.map(item => item.hotelBranchRoomTypeId);
+    const roomTypesDataPromise = prisma.hotelBranchRoomType.findMany({
+      where: { id: { in: roomTypeIds } },
+      include: { roomType: true },
+    });
+
+    const serviceIds = usingServiceItems?.map(item => item.serviceId) || [];
+    const servicesDataPromise = prisma.service.findMany({ where: { id: { in: serviceIds } } });
+    
+    // Chạy song song 2 câu truy vấn đọc giá để tiết kiệm thời gian
+    const [roomTypes, services] = await Promise.all([roomTypesDataPromise, servicesDataPromise]);
+
+    // Tính toán tổng chi phí (đây là thao tác trên bộ nhớ, rất nhanh)
+    let finalAmount = 0;
+    const numberOfNights = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24));
+    for (const item of bookingRoomItems) {
+      const roomTypeInfo = roomTypes.find(rt => rt.id === item.hotelBranchRoomTypeId);
+      if (!roomTypeInfo) throw new Error(`Không tìm thấy thông tin giá cho phòng ${item.hotelBranchRoomTypeId}`);
+      finalAmount += roomTypeInfo.roomType.price * item.quantityBooked * numberOfNights;
     }
-
-    let fromDateTime: Date;
-    let toDateTime: Date;
-    try {
-      fromDateTime = new Date(bookingData.fromDate);
-      toDateTime = new Date(bookingData.toDate);
-      if (isNaN(fromDateTime.getTime()) || isNaN(toDateTime.getTime()) || fromDateTime >= toDateTime) {
-        throw new Error("Invalid date format or range provided.");
+    if (usingServiceItems) {
+      for (const item of usingServiceItems) {
+        const serviceInfo = services.find(s => s.id === item.serviceId);
+        if (!serviceInfo) throw new Error(`Không tìm thấy dịch vụ ${item.serviceId}`);
+        finalAmount += serviceInfo.price * item.quantity;
       }
-    } catch (dateError) {
-      console.error("Date parsing error:", dateError);
-      return NextResponse.json(
-        { success: false, message: "Invalid date format for fromDate or toDate." },
-        { status: 400 }
-      );
     }
 
-    const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const newBooking = await tx.booking.create({
-        data: {
-          userId: bookingData.userId,
-          fromDate: fromDateTime,
-          toDate: toDateTime,
-        },
-      });
+    // --- BẮT ĐẦU GIAO DỊCH DATABASE ---
+    const result = await prisma.$transaction(async (tx) => {
+      
+      // Tạo một mảng các "lời hứa" kiểm tra phòng
+      const availabilityChecksPromises = bookingRoomItems.map(item => 
+        tx.roomAvailability.findMany({
+          where: {
+            hotelBranchRoomTypeId: item.hotelBranchRoomTypeId,
+            date: { gte: bookingData.fromDate, lt: bookingData.toDate },
+          },
+        })
+      );
+      // Chạy tất cả các "lời hứa" kiểm tra CÙNG MỘT LÚC 
+      const allAvailabilities = await Promise.all(availabilityChecksPromises);
 
-      const bookingRoomItemsData = clientBookingRoomItems.map((item) => {
-        if (!item.hotelBranchRoomTypeId || typeof item.quantityBooked !== 'number' || item.quantityBooked <= 0) {
-          throw new Error(
-            `Invalid data for booking room item: hotelBranchRoomTypeId or quantityBooked is missing/invalid for item ${JSON.stringify(item)}`
-          );
+      // Xử lý kết quả sau khi đã có tất cả
+      for (let i = 0; i < bookingRoomItems.length; i++) {
+        const item = bookingRoomItems[i];
+        const availabilities = allAvailabilities[i];
+        if (availabilities.length < numberOfNights) {
+            throw new Error(`Dữ liệu kho phòng bị thiếu cho loại phòng ID ${item.hotelBranchRoomTypeId}`);
         }
-        return {
-          hotelBranchRoomTypeId: item.hotelBranchRoomTypeId,
-          quantityBooked: item.quantityBooked,
-          bookingId: newBooking.id,
-        };
-      });
-
-      if (bookingRoomItemsData.length === 0) {
-        throw new Error("No valid room items to create after processing client data.");
-      }
-
-      //Create new Booking
-      const newBookingRoomItems = await tx.bookingRoomItem.createMany({
-        data: bookingRoomItemsData,
-        skipDuplicates: true,
-      });
-
-      console.log(bookingGuest)
-
-      //Create new BookingGuest
-      const newBookingGuest = await tx.bookingGuest.create({
-        data: {
-          ...bookingGuest,
-          bookingId: newBooking.id,
-        },
-      });
-
-      //Create new UsingService
-      let usingServiceData: any[] = [];
-      if (usingServiceItems && usingServiceItems.length > 0) {
-        // Fetch all services to map serviceName to serviceId
-        const serviceNames = usingServiceItems.map((item) => item.serviceName);
-        const services = await tx.service.findMany({
-          where: { name: { in: serviceNames } },
-          select: { id: true, name: true },
-        });
-
-        const serviceMap = new Map(services.map((s) => [s.name, s.id]));
-        const invalidServiceNames = serviceNames.filter((name) => !serviceMap.has(name));
-
-        if (invalidServiceNames.length > 0) {
-          throw new Error(`Invalid service names: ${invalidServiceNames.join(', ')}`);
+        const notEnoughRoomDay = availabilities.find(avail => (avail.totalRooms - avail.bookedRooms) < item.quantityBooked);
+        if (notEnoughRoomDay) {
+            throw new Error(`Không đủ phòng trống cho loại phòng ID ${item.hotelBranchRoomTypeId}`);
         }
-
-        usingServiceData = usingServiceItems.map((item) => {
-          if (typeof item.quantity !== 'number' || item.quantity <= 0) {
-            throw new Error(`Invalid quantity for service ${item.serviceName}`);
-          }
-
-          return {
-            serviceId: serviceMap.get(item.serviceName)!,
-            bookingId: newBooking.id,
-            quantity: item.quantity,
-          };
-        });
       }
 
-      const newUsingService = await tx.usingService.createMany({
-        data: usingServiceData,
-        skipDuplicates: true,
-      });
+      // --- CÁC THAO TÁC GHI DỮ LIỆU ---
+      // Các thao tác này phụ thuộc lẫn nhau (cần bookingId) nên phải chạy tuần tự
+      const newBooking = await tx.booking.create({ data: { userId: bookingData.userId, fromDate, toDate, status: 'PENDING' } });
+      
+      await Promise.all([
+        tx.bookingRoomItem.createMany({ data: bookingRoomItems.map(item => ({ bookingId: newBooking.id, ...item })) }),
+        tx.bookingGuest.create({ data: { ...bookingGuest, bookingId: newBooking.id } }),
+        usingServiceItems && usingServiceItems.length > 0 
+          ? tx.usingService.createMany({ data: usingServiceItems.map(item => ({ bookingId: newBooking.id, status: 'SCHEDULED', ...item })) })
+          : Promise.resolve(), // Nếu không có service, trả về một promise đã hoàn thành
+      ]);
 
-      return {
-        newBooking,
-        newBookingRoomItems,
-        newUsingService,
-        newBookingGuest,
-      };
+    
+
+      // ==========================================================
+      // CẢI TIẾN 3: CẬP NHẬT KHO PHÒNG (SONG SONG HÓA)
+      // ==========================================================
+      const inventoryUpdatePromises = bookingRoomItems.map(item => 
+        tx.roomAvailability.updateMany({
+          where: { hotelBranchRoomTypeId: item.hotelBranchRoomTypeId, date: { gte: fromDate, lt: toDate } },
+          data: { bookedRooms: { increment: item.quantityBooked } },
+        })
+      );
+      // Chạy tất cả các "lời hứa" cập nhật CÙNG MỘT LÚC
+      await Promise.all(inventoryUpdatePromises);
+
+      return { newBooking };
     }, {
-      timeout: 10000,
+      timeout: 15000, // Timeout vẫn giữ nguyên, nhưng giờ đây code sẽ chạy nhanh hơn nhiều
     });
 
     return NextResponse.json({ success: true, data: result }, { status: 201 });

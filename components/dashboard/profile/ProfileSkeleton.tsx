@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const ProfileSkeleton = () => {
   return (
-    <div className='m-4 px-8 rounded-sm w-full bg-white'>
+    <div className='pb-8 pt-4 px-8 rounded-sm w-full bg-white'>
       {/* --- Skeleton cho Header --- */}
       <section className='py-4 border-b'>
         <Skeleton className="h-8 w-48 mb-2" />
