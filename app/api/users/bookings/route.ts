@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import handleError from '@/lib/handlers/error';
 import { ApiErrorResponse } from '@/types/global';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/auth';
 
 export async function GET(request: Request) {
     try {
