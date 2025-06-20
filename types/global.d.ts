@@ -7,6 +7,7 @@ type ActionResponse<T = null> = {
         message: string,
         details: Record<string, string[]>
     },
+    message?: string,
     status?: number
 }
 

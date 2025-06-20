@@ -1,4 +1,4 @@
-import Footer from "@/components/footer_for_homepage/page";
+import Footer from "@/components/footer/footer_for_homepage/page";
 import ClientNavbar from "@/components/navbar/navbar_for_homepage/ClientNavbarForHomePage";
 import { Metadata } from "next";
 
@@ -16,7 +16,7 @@ export default function RootLayout({
     <div lang="en" className={``}> 
         <ClientNavbar/>
         {children}
-        <Footer/>
+        <Footer />
     </div>
   );
 }

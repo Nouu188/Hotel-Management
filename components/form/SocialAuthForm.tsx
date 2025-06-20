@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import React from 'react'
 import { Button } from '../ui/button'
-import { signIn } from '@/auth'
+import { signIn } from 'next-auth/react'; 
 
 const SocialAuthForm = () => {
   return (

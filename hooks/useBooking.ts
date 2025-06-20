@@ -84,8 +84,6 @@ export const useBooking = () => {
         const toDateISO = new Date(`${toDateStr}T00:00:00.000Z`).toISOString();
 
         try {
-          console.log("Check: ", fromDateISO, toDateISO)
-            // Phần tổng hợp phòng và dịch vụ đã đúng, giữ nguyên
             const aggregatedRoomItemsMap = new Map<string, ClientApiBookingRoomItem>();
             selectedHotelRoomTypes.forEach(instance => {
                 const hotelBranchRoomTypeId = instance.originalRoomData.id;

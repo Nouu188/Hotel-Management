@@ -1,7 +1,6 @@
 import { ZodError, ZodSchema } from "zod"
 import { UnauthorizedError, ValidationError } from "../http-errors";
-import { Session } from "next-auth";
-import { auth } from "@/auth";
+import { getServerSession, Session } from "next-auth";
 
 type ActionOptions<T> = {
     params: T,
@@ -29,7 +28,7 @@ async function action<T> ({
     let session: Session | null = null;
 
     if(authorize) {
-        session = await auth();
+        session = await getServerSession();
 
         if(!session) {
             return new UnauthorizedError();

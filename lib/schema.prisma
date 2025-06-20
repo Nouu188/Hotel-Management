@@ -12,6 +12,7 @@ model User {
   id        String    @id @default(uuid())
   name      String
   email     String    @unique
+  password  String?
   birthDay  DateTime?
   phoneNumber   String?
   image         String?
@@ -30,7 +31,6 @@ model User {
 model Account {
   id                String   @id @default(uuid())
   userId            String   @unique
-  password          String?
   provider          String
   providerAccountId String   @unique
   createdAt         DateTime @default(now())

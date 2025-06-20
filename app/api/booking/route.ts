@@ -16,10 +16,6 @@ export async function POST(request: Request) {
     const fromDate = parseISO(bookingData.fromDate);
     const toDate = parseISO(bookingData.toDate);
 
-    // ==========================================================
-    // CẢI TIẾN 1: ĐỌC DỮ LIỆU GIÁ BÊN NGOÀI TRANSACTION
-    // ==========================================================
-    // Các thao tác đọc này không cần nằm trong transaction, giúp giảm thời gian chạy của nó.
     const roomTypeIds = bookingRoomItems.map(item => item.hotelBranchRoomTypeId);
     const roomTypesDataPromise = prisma.hotelBranchRoomType.findMany({
       where: { id: { in: roomTypeIds } },
@@ -29,10 +25,9 @@ export async function POST(request: Request) {
     const serviceIds = usingServiceItems?.map(item => item.serviceId) || [];
     const servicesDataPromise = prisma.service.findMany({ where: { id: { in: serviceIds } } });
     
-    // Chạy song song 2 câu truy vấn đọc giá để tiết kiệm thời gian
     const [roomTypes, services] = await Promise.all([roomTypesDataPromise, servicesDataPromise]);
 
-    // Tính toán tổng chi phí (đây là thao tác trên bộ nhớ, rất nhanh)
+    // Tính toán tổng chi phí 
     let finalAmount = 0;
     const numberOfNights = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 3600 * 24));
     for (const item of bookingRoomItems) {
@@ -48,10 +43,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // --- BẮT ĐẦU GIAO DỊCH DATABASE ---
     const result = await prisma.$transaction(async (tx) => {
-      
-      // Tạo một mảng các "lời hứa" kiểm tra phòng
       const availabilityChecksPromises = bookingRoomItems.map(item => 
         tx.roomAvailability.findMany({
           where: {
@@ -60,10 +52,8 @@ export async function POST(request: Request) {
           },
         })
       );
-      // Chạy tất cả các "lời hứa" kiểm tra CÙNG MỘT LÚC 
       const allAvailabilities = await Promise.all(availabilityChecksPromises);
 
-      // Xử lý kết quả sau khi đã có tất cả
       for (let i = 0; i < bookingRoomItems.length; i++) {
         const item = bookingRoomItems[i];
         const availabilities = allAvailabilities[i];
@@ -76,8 +66,6 @@ export async function POST(request: Request) {
         }
       }
 
-      // --- CÁC THAO TÁC GHI DỮ LIỆU ---
-      // Các thao tác này phụ thuộc lẫn nhau (cần bookingId) nên phải chạy tuần tự
       const newBooking = await tx.booking.create({ data: { userId: bookingData.userId, fromDate, toDate, status: 'PENDING' } });
       
       await Promise.all([
@@ -88,23 +76,17 @@ export async function POST(request: Request) {
           : Promise.resolve(), // Nếu không có service, trả về một promise đã hoàn thành
       ]);
 
-    
-
-      // ==========================================================
-      // CẢI TIẾN 3: CẬP NHẬT KHO PHÒNG (SONG SONG HÓA)
-      // ==========================================================
       const inventoryUpdatePromises = bookingRoomItems.map(item => 
         tx.roomAvailability.updateMany({
           where: { hotelBranchRoomTypeId: item.hotelBranchRoomTypeId, date: { gte: fromDate, lt: toDate } },
           data: { bookedRooms: { increment: item.quantityBooked } },
         })
       );
-      // Chạy tất cả các "lời hứa" cập nhật CÙNG MỘT LÚC
       await Promise.all(inventoryUpdatePromises);
 
       return { newBooking };
     }, {
-      timeout: 15000, // Timeout vẫn giữ nguyên, nhưng giờ đây code sẽ chạy nhanh hơn nhiều
+      timeout: 15000,
     });
 
     return NextResponse.json({ success: true, data: result }, { status: 201 });

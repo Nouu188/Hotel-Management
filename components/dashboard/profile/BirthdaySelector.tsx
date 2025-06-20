@@ -33,7 +33,6 @@ const BirthdaySelector = () => {
 
   const days = Array.from({ length: daysInMonth }, (_, i) => String(i + 1));
 
-  // NEW: Tự động reset ngày nếu nó không hợp lệ với tháng/năm mới
   useEffect(() => {
     const currentDay = parseInt(form.getValues("birthDay.day"), 10);
     if (currentDay > daysInMonth) {

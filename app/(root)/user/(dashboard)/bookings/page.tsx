@@ -1,9 +1,13 @@
-import React from 'react'
+"use client";
 
-const page = () => {
-  return (
-    <div>page</div>
-  )
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react';
+
+const BookingHistory = () => {
+    const router = useRouter();
+    useEffect(() => {
+        router.push("/user/bookings/all");
+    }, []);
 }
 
-export default page
+export default BookingHistory;

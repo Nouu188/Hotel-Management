@@ -1,5 +1,5 @@
 import handleError from "@/lib/handlers/error";
-import { NotFoundError, ValidationError } from "@/lib/http-errors";
+import { ValidationError } from "@/lib/http-errors";
 import prisma from "@/lib/prisma";
 import { UserSchema } from "@/lib/validation";
 import { ApiErrorResponse } from "@/types/global";

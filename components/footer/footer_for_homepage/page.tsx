@@ -14,8 +14,8 @@ const Footer = () => {
           max-w-[1210px] 
           container mx-auto'
         >
-            <ContactInfo/>
-            <NavigationLinksFooter/>
+            <ContactInfo />
+            <NavigationLinksFooter />
         </div>
     </div>
   )

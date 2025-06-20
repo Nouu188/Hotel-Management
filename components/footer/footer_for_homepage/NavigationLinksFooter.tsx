@@ -1,7 +1,7 @@
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { hotelBranches } from '@/constants/hotelBranches';
 import Image from 'next/image';
 import React from 'react'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 const Hotel = [
     {

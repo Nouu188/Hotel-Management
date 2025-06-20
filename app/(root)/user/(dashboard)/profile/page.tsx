@@ -12,7 +12,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
-import { NotFoundError } from '@/lib/http-errors';
+import imageCompression from 'browser-image-compression';
 import { ActionResponse } from '@/types/global';
 import { User } from '@prisma/client';
 import { ProfileSkeleton } from '@/components/dashboard/profile/ProfileSkeleton';
@@ -29,7 +29,6 @@ const ProfileView = () => {
     
     const [userProfile, setUserProfile] = useState<User | null>(null);
 
-    // --- Authentication Check ---
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/sign-in");
@@ -40,13 +39,12 @@ const ProfileView = () => {
         resolver: zodResolver(UserProfileSchema),
         defaultValues: {
             name: "",
-            gender: "other", // Default an toàn
+            gender: "male",
             birthDay: { day: "", month: "", year: "" },
             image: undefined,
         },
     });
 
-    // Fetch Profile Data on Mount ---
     useEffect(() => {
         const fetchProfile = async () => {
             if (!session?.user?.id) return;
@@ -86,83 +84,90 @@ const ProfileView = () => {
         return <ProfileSkeleton />;
     }
 
-    const onUploadAvatar = async (file: string | undefined) => {
-        const blobUrl = file; 
-        if(!blobUrl) return null;
+    const onUploadAvatar = async (file: File) => {
+        console.log(`Original file size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
 
-        const response = await fetch(blobUrl);
-        const blob = await response.blob();
+        const options = {
+        maxSizeMB: 1,         
+        maxWidthOrHeight: 800,
+        useWebWorker: true,   
+        };
 
-        const fileObject = new File([blob], "avatar.png", {
-            type: blob.type,
-            lastModified: Date.now(),
-        });
+        try {
+            const compressedFile = await imageCompression(file, options);
+            
+            const formData = new FormData();
+            formData.append('file', compressedFile, compressedFile.name); 
 
-        const formData = new FormData();
-        formData.append('file', fileObject);
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
 
-        const res = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
-        });
+            if (!res.ok) throw new Error('Upload failed');
+            
+            const uploadedAvatar = await res.json();
+            if (!uploadedAvatar?.data?.secure_url) {
+                throw new Error('Cloudinary response missing secure_url');
+            }
+            return uploadedAvatar.data.secure_url;
 
-        if (!res.ok) {
-            throw new Error('Upload failed');
+        } catch (error) {
+            console.error("Error during image compression or upload:", error);
+            throw error; 
         }
-
-        const uploadedAvatar = await res.json();
-
-        if (!uploadedAvatar?.data?.secure_url) {
-            throw new Error('Cloudinary response missing secure_url');
-        }
-
-        return uploadedAvatar.data.secure_url;
     };
 
     async function onSubmit(values: UserProfileFormValues) {
         if (!session?.user?.id) {
-            throw new NotFoundError("User not found");
+            throw new Error("User not found");
         }
-        
-        //Handle upload avatar to cloudinary
-        const uploadedAvatar = await onUploadAvatar(values.image);
-        values.image = uploadedAvatar;
+
+        try {
+        let finalImageUrl = userProfile?.image; 
+
+        if (values.image instanceof File) {
+            console.log("Phát hiện file ảnh mới, đang tải lên...");
+            finalImageUrl = await onUploadAvatar(values.image);
+        } else if (typeof values.image === 'string') {
+            finalImageUrl = values.image;
+        }
 
         const { day, month, year } = values.birthDay!;
-
         const birthDayDate = (year && month && day) 
             ? new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`) 
             : undefined;
 
         const updatedProfileData = {
             ...values,
+            image: finalImageUrl, 
             birthDay: birthDayDate,
         };
 
-        try {
-            const res = await api.users.update(session.user.id, updatedProfileData) as ActionResponse<User>;
+        const res = await api.users.update(session.user.id, updatedProfileData) as ActionResponse<User>;
 
-            if (res.success && res.data) {
-                toast({
-                    title: "Profile Updated Successfully!",
-                    description: "Your profile has been updated.",
-                });
-                // Cập nhật session để tên/ảnh mới hiển thị ngay lập tức ở nơi khác
-                await updateSession({
-                    ...session,
-                    user: {
-                        ...session.user, 
-                        name: res.data.name,   
-                        image: res.data.image, 
-                    },
-                });
-                router.refresh();
+        if (res.success && res.data) {
+            toast({ title: "Profile Updated Successfully!" });
 
-                setUserProfile(res.data);
-            } else {
-                throw new Error("Could not update your profile.");
-            }
-        } catch (error) {
+            await updateSession({ user: { name: res.data.name, image: res.data.image } });
+            router.refresh();
+
+            setUserProfile(res.data);
+
+            form.reset({
+                name: res.data.name || "",
+                image: res.data.image || undefined,
+                gender: res.data.gender || "other",
+                birthDay: res.data.birthDay ? {
+                    day: new Date(res.data.birthDay).getDate().toString(),
+                    month: (new Date(res.data.birthDay).getMonth() + 1).toString(),
+                    year: new Date(res.data.birthDay).getFullYear().toString(),
+                } : { day: "", month: "", year: "" },
+            });
+        } else {
+            throw new Error(res.error?.message || "Could not update your profile.");
+        }
+    } catch (error) {
             console.error("Error updating profile:", error);
             toast({
                 title: "Update Error",
@@ -196,7 +201,7 @@ const ProfileView = () => {
                                 {/* Email */}
                                 <div className='flex items-center gap-2'>
                                     <div className='font-medium min-w-[100px] text-[15px]'>Email</div>
-                                    <div>{session?.user?.email ? maskEmail(session.user.email) : "No email available"}</div>
+                                    <div>{userProfile?.email ? maskEmail(userProfile?.email) : "No email available"}</div>
                                 </div>
 
                                 {/* Phone Number */}

@@ -107,7 +107,7 @@ export const UserSchema = z.object({
 
 export const UserProfileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 letters").max(50),
-  image: z.string().optional(),
+  image: z.any().optional(),
   gender: z.string().optional(),
   birthDay: z.object({
     day: z.string(),

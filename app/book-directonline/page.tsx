@@ -2,7 +2,7 @@
 
 import BillSearchingSection from "@/components/bill/BillSearchingSection";
 import { DatePickerWithRange } from "@/components/DatePickerWithRange";
-import RoomGuestSelector from "@/components/Rooms_Guests_Selector";
+import RoomGuestSelector from "@/components/selector/Rooms_Guests_Selector";
 import { hotelBranches } from "@/constants/hotelBranches";
 import { useSyncBookingQuery } from "@/hooks/useSyncBookingQuery";
 import { AppDispatch, RootState } from "@/store/store";

@@ -3,13 +3,11 @@ import prisma from "@/lib/prisma";
 import { ApiErrorResponse } from "@/types/global";
 import { NextResponse } from "next/server";
 import { parseISO } from 'date-fns';
-// Đảm bảo type này được import đúng và có trường availabilityStatus, originalQuantity, quantity (là remaining)
 import { HotelBranchRoomTypeItemWithStatus } from "@/types/roomType";
 import { RoomSearchSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
-// --- BƯỚC 1: VALIDATE & TRÍCH XUẤT YÊU CẦU ---
     const body = await request.json();
     const validation = RoomSearchSchema.safeParse(body);
 
@@ -26,7 +24,6 @@ export async function POST(request: Request) {
     const totalRoomsRequested = guestAllocations.length;
     const maxCapacityNeeded = Math.max(...requiredCapacities);
 
-// --- BƯỚC 2: TÌM CÁC LOẠI PHÒNG ỨNG VIÊN ---
     // Tìm tất cả các loại phòng tại chi nhánh có sức chứa đủ cho nhóm đông nhất
     const candidateRoomTypes = await prisma.hotelBranchRoomType.findMany({
       where: {
@@ -44,7 +41,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, data: [] }, { status: 200 });
     }
 
-// --- BƯỚC 3: KIỂM TRA KHO PHÒNG THEO NGÀY CHO TỪNG ỨNG VIÊN ---
     const roomProcessingPromises = candidateRoomTypes.map(async (hbrt) => {
       const availabilityResult = await prisma.roomAvailability.aggregate({
         where: {
@@ -94,7 +90,6 @@ export async function POST(request: Request) {
       allProcessedRooms.sort((a, b) => statusPriority[a.availabilityStatus] - statusPriority[b.availabilityStatus]);
 
       return NextResponse.json({ success: true, data: allProcessedRooms }, { status: 200 });
-
     } catch (error) {
       return handleError(error, "api") as ApiErrorResponse;
     }

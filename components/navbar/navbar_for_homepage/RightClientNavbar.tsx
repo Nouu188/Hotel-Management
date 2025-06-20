@@ -24,7 +24,8 @@ import { NavigationMenuTrigger } from '@radix-ui/react-navigation-menu';
 const RightClientNavbar = () => {
     const router = useRouter();
     const { data: session } = useSession();
-    const userId = session?.user?.id;
+   
+    const userName = session?.user?.name;
     const avatarUrl = session?.user.image;
 
     const handleSignOut = async () => {
@@ -39,25 +40,25 @@ const RightClientNavbar = () => {
             </div>
             <section className="-translate-y-5 flex-col max-lg:hidden">
                 <div className="flex gap-4 justify-end mt-4">
-                    <div className={cn("mb-3 flex items-center justify-end gap-4", userId && "translate-x-2")}>
-                        <div className="hover:text-[#BF882E]  flex items-center text-[14px] ease-in-out transition-all duration-300 hover:underline cursor-pointer">
+                    <div className={cn("mb-3 flex items-center justify-end gap-4", userName && "translate-x-2")}>
+                        <div className="hover:text-[#BF882E] flex items-center text-[14px] ease-in-out transition-all duration-300 hover:underline cursor-pointer">
                             Our properties
                             <ChevronDown className="w-[14px] h-[14px]"/>
                         </div>
                         <div className="hover:text-[#BF882E] text-[14px] ease-in-out transition-all duration-300 hover:underline cursor-pointer">EHG News</div>                
-                        {userId ? (
+                        {userName ? (
                             <Menubar className="bg-transparent border-none">
                                 <MenubarMenu>
                                     <MenubarTrigger className="border-none !bg-transparent">
                                         {avatarUrl ? (
-                                            <Avatar className="w-[37px] h-[37px] cursor-pointer flex justify-end">
-                                                <AvatarImage src={avatarUrl} />
+                                            <Avatar className="w-10 h-10 cursor-pointer flex justify-end">
+                                                <AvatarImage className="object-cover" src={avatarUrl} />
                                             </Avatar>
                                         ) : (
                                             <img
                                                 src="/icons/user.svg"
                                                 alt="Default avatar"
-                                                className="w-28 h-28 object-cover rounded-full p-4 bg-gray-100"
+                                                className="w-10 h-10 object-cover rounded-full p-4 bg-gray-100"
                                             />
                                         )}
                                     </MenubarTrigger>

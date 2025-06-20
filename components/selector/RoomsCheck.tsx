@@ -3,14 +3,15 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { hotelBranches } from "@/constants/hotelBranches";
-import { DatePickerWithRange } from "./DatePickerWithRange";
-import { Button } from "./ui/button";
+
 import { DateRange } from "react-day-picker";
 import { addDays } from "date-fns";
-import BranchPicker from "./BranchPicker";
 import { useSelector, useDispatch } from 'react-redux'; 
 import { RootState, AppDispatch } from '@/store/store'; 
 import { setDateRange, setSelectedBranch } from "@/store/slices/filterHotelRoomTypeSlice";
+import BranchPicker from "./BranchPicker";
+import { DatePickerWithRange } from "../DatePickerWithRange";
+import { Button } from "../ui/button";
 
 const RoomsCheck = () => {
   const router = useRouter();

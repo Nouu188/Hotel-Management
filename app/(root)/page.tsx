@@ -1,7 +1,6 @@
 "use client";
 
 import ImagesCarousel from '@/components/ImagesAutoCarousel'
-import RoomsCheck from '@/components/RoomsCheck'
 import { CircleUserRound, Gem, MapPin } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -11,20 +10,21 @@ import DynamicReactPlayer from '@/components/DynamicReactPlayer';
 import FloatingChatButton from '@/components/QuickActionBar';
 import QuickActionBar from '@/components/QuickActionBar';
 import ClientNavbar from '@/components/navbar/navbar_for_homepage/ClientNavbarForHomePage';
+import RoomsCheck from '@/components/selector/RoomsCheck';
 
 const HomePage = () => {
   return (
     <div>
       <ClientNavbar/>
       <div className='flex flex-col min-w-screen w-full'>
-          <ImagesCarousel/>
+          <ImagesCarousel />
           
           <section className='-mt-24 z-100'>
             <div className='max-lg:hidden'>
-              <RoomsCheck/>
-              <FloatingChatButton/>
+              <RoomsCheck />
+              <FloatingChatButton />
             </div>
-            <QuickActionBar/>
+            <QuickActionBar />
           </section>
 
           <section className='flex flex-col max-lg:mt-20 justify-center  lg:mt-2 pb-4'>
