@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react'; 
+import { useState, useEffect, useCallback, useRef } from 'react'; 
 import { useInView } from 'react-intersection-observer';
 import { Booking } from '@prisma/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +14,8 @@ export default function BookingList() {
     const [isLoading, setIsLoading] = useState(false);
 
     const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+    const initialLoadStarted = useRef(false);
 
     const { ref, inView } = useInView({ threshold: 0 });
 
@@ -54,7 +56,10 @@ export default function BookingList() {
     }, [isLoading, hasMore, cursor, isInitialLoad]); 
 
     useEffect(() => {
-        loadMoreBookings();
+        if (!initialLoadStarted.current) {
+            loadMoreBookings();
+            initialLoadStarted.current = true;
+        }
     }, []); 
 
     useEffect(() => {
@@ -65,7 +70,7 @@ export default function BookingList() {
 
     if (isInitialLoad && isLoading) {
         return (
-            <div className="space-y-4">
+            <div className="space-y-4 mt-2">
                 <Skeleton className="h-24 w-full" />
                 <Skeleton className="h-24 w-full" />
                 <Skeleton className="h-24 w-full" />
