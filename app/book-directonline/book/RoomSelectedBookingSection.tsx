@@ -8,10 +8,10 @@ import { useSelector } from 'react-redux'
 const RoomSelectedBookingSection = () => {
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
     const toggleExpand = (id: string) => {
-    setExpanded(prev => ({
-        ...prev,
-        [id]: !prev[id],
-    }));
+        setExpanded(prev => ({
+            ...prev,
+            [id]: !prev[id],
+        }));
     };
 
   const selectedHotelRoomTypes = useSelector((state: RootState) => state.selectedHotelRoomTypes.selectedInstances);

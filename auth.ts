@@ -4,6 +4,13 @@ import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma'; 
 import { SignInSchema } from '@/lib/validation';
 
+function cleanUser(user: any) {
+  return {
+    ...user,
+    phoneNumber: user.phoneNumber ?? undefined,
+  };
+}
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
@@ -30,7 +37,7 @@ export const authOptions: NextAuthOptions = {
             
             const passwordsMatch = await bcrypt.compare(password, user.password);
             if (passwordsMatch) {
-                return user;
+                return cleanUser(user);
             }
 
             return null;
@@ -38,29 +45,57 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.sub = user.id;
+        token.id = user.id;
         token.name = user.name;
         token.role = user.role;
         token.email = user.email;
+        token.phoneNumber = user.phoneNumber;
         token.picture = user.image;
       }
 
       if(trigger === "update" && session.user) {
-        token.name = session.user.name;
-        token.picture = session.user.image;
-        token.email = session.user.email;
+        console.log("JWT callback triggered with UPDATE", session);
+
+        if (session.image) {
+          token.picture = session.image;
+        }
+        if (session.name) {
+          token.name = session.name;
+        }
+        if (session.email) {
+          token.email = session.email;
+        }
+      }
+
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+          });
+          if (dbUser) {
+            // Ghi đè thông tin trong token bằng dữ liệu mới nhất từ DB
+            token.name = dbUser.name;
+            token.email = dbUser.email;
+            token.picture = dbUser.image ?? undefined;
+            token.role = dbUser.role;
+            
+          }
+        } catch (error) {
+          console.error("Error fetching user data in JWT callback:", error);
+        }
       }
       return token;
     },
     session({ session, token }) {
       if (session.user && token.sub) {
-        session.user.id = token.sub as string;
+        session.user.id = token.id as string;
         session.user.role = token.role as string;
-        session.user.name = token.name;
+        session.user.name = token.name as string;
         session.user.image = token.picture;
-        session.user.email = token.email
+        session.user.email = token.email as string;
+        session.user.phoneNumber = token.phoneNumber;
       }
       
       return session;
@@ -71,6 +106,3 @@ export const authOptions: NextAuthOptions = {
     signIn: '/sign-in',
   },
 };
-
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };

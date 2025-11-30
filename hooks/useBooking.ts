@@ -130,7 +130,7 @@ export const useBooking = () => {
                 bookingRoomItems: finalBookingRoomItems,
             };
             
-            const res = await api.booking.create(bookingDetails);
+            const res = await api.bookings.create(bookingDetails);
 
             if (res.success && res.data) {
                 toast({

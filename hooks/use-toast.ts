@@ -16,7 +16,7 @@ export function toast({
     description,
     action,
     duration: 5000, 
-    ...props,
+    ...props,    
   });
 }
 

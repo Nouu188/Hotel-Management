@@ -92,3 +92,61 @@ export const resizeImage = (file: File, targetSize: number): Promise<string> => 
     reader.readAsDataURL(file);
   });
 };
+
+export const generateLabel = (segment: string): string => {
+  if (!segment) return "Home"; 
+
+  let label = segment.replace(/-/g, ' ').replace(/_/g, ' ');
+
+  label = label
+    .split(' ') 
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1)) 
+    .join(' '); 
+
+  return label;
+};
+
+export const generateSegmentFromLabel = (label: string): string => {
+  if (label.trim().toLowerCase() === "home") {
+    return "";
+  }
+
+  let segment = label.toLowerCase();
+
+  segment = segment.replace(/\s+/g, '-');
+  segment = segment.replace(/[^a-z0-9-]/g, '');
+  segment = segment.replace(/^-+|-+$/g, '');
+
+  return segment;
+};
+
+export function removeLastSegment(pathname: string): string {
+  if (!pathname) {
+    return "/"; 
+  }
+
+  const normalizedPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
+
+  if (normalizedPath === "/" || normalizedPath === "") {
+    return "/";
+  }
+
+  const lastSlashIndex = normalizedPath.lastIndexOf('/');
+
+  if (lastSlashIndex <= 0) { 
+    return "/";
+  }
+
+  return normalizedPath.substring(0, lastSlashIndex);
+}
+
+export function getLastSegment(pathname: string): string {
+  if(!pathname) {
+    return "/";
+  }
+
+  const pathSegments = pathname.split("/").filter(pathname => pathname);
+  const lastSegment = pathSegments[pathSegments.length - 1];
+
+  return lastSegment;
+}

@@ -141,8 +141,12 @@ model Bill {
   id            String        @id @default(uuid())
   bookingId     String        @unique
   staffId       String
+
   checkIn       DateTime
   checkOut      DateTime
+
+  earlyCheckInFee Float @default(0)
+
   paymentMethod PaymentMethod @default(E_WALLET)
 
   status        BillStatus

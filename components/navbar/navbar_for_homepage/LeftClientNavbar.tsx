@@ -6,7 +6,7 @@ import React from 'react'
 import MobileNavigation from '../MobileNavigation';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList } from '@/components/ui/navigation-menu';
 import { NavigationMenuTrigger } from '@radix-ui/react-navigation-menu';
-import { generateLabel } from '@/components/Breadcrumbs';
+import { generateLabel } from '@/lib/utils';
 
 const LeftClientNavbar = () => {
   return (

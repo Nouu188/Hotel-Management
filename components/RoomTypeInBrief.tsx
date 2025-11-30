@@ -7,7 +7,7 @@ import BookARoomButton from './BookARoomButton'
 import { Button } from './ui/button'
 import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
-import { generateSegmentFromLabel, removeLastSegment } from './Breadcrumbs'
+import { generateSegmentFromLabel, removeLastSegment } from '@/lib/utils';
 
 export interface RoomTypeInBriefProps {
     name: string,

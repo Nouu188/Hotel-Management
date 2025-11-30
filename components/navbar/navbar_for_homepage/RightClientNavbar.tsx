@@ -16,9 +16,8 @@ import { signOut, useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Button } from '../../ui/button';
 import Link from 'next/link'
-import { cn } from '@/lib/utils';
+import { cn, generateLabel } from '@/lib/utils';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuList } from '@/components/ui/navigation-menu';
-import { generateLabel } from '@/components/Breadcrumbs';
 import { NavigationMenuTrigger } from '@radix-ui/react-navigation-menu';
 
 const RightClientNavbar = () => {
@@ -66,7 +65,7 @@ const RightClientNavbar = () => {
                                     <MenubarContent align="center" style={{ width: "100px", minWidth: "unset" }} className="playfair z-300 flex flex-col justify-center text-md">
                                         <MenubarItem 
                                             className="flex whitespace-nowrap gap-3 hover:bg-transparent hover:text-[#BF882E] ease-in-out transition-all duration-300 cursor-pointer" 
-                                            onClick={() => router.push("/user/profile")}
+                                            onClick={() => router.push("/user")}
                                         >
                                             Dashboard
                                         </MenubarItem>

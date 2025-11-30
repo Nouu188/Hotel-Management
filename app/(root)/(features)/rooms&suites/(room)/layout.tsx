@@ -1,8 +1,8 @@
 "use client";
 
-import { generateLabel } from "@/components/Breadcrumbs";
 import RoomTypeInBrief from "@/components/RoomTypeInBrief";
 import { roomTypeInBrief } from "@/constants/roomTypeInBrief";
+import { generateLabel } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 function getRandomInt(min: number, max: number):number {

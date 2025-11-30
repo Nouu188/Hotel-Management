@@ -9,7 +9,6 @@ FROM node:18-alpine
 WORKDIR /app
 COPY --from=builder /app .
 
-# BẮT BUỘC: Railway chỉ forward đến PORT 3000
 ENV PORT=3000
 
 EXPOSE 3000

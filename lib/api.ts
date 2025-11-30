@@ -91,23 +91,25 @@ export const api = {
                 method: "DELETE"
             })
     },
-    booking: {
-        getAll: () => fetchHandler(`${API_BASE_URL}/booking`),
-        getById: (id: string) => fetchHandler(`${API_BASE_URL}/booking/${id}`),
+    bookings: {
+        getAll: () => fetchHandler(`${API_BASE_URL}/bookings`),
+        getById: (id: string) => fetchHandler(`${API_BASE_URL}/bookings/${id}`),
+        getHistory: () => 
+            fetchHandler(`${API_BASE_URL}/bookings/history`),
         create: (bookingData: Partial<BookingDetails>) => 
-            fetchHandler(`${API_BASE_URL}/booking`, {
+            fetchHandler(`${API_BASE_URL}/bookings`, {
                 method: "POST",
                 body: JSON.stringify(bookingData)
             }),
         update: (id: string, bookingData: Partial<BookingRoomItem>) => 
-            fetchHandler(`${API_BASE_URL}/booking/${id}`, {
+            fetchHandler(`${API_BASE_URL}/bookings/${id}`, {
                 method: "POST",
                 body: JSON.stringify(bookingData)
             }),
         delete: (id: string) => 
-            fetchHandler(`${API_BASE_URL}/booking/${id}`, {
+            fetchHandler(`${API_BASE_URL}/bookings/${id}`, {
                 method: "DELETE"
-            })
+            }),
     },
     hotelBranchRoomType: {
         getQuantityById: (roomTypeId: string, hotelBranchId: string, dateRange: DateRange | undefined) => 

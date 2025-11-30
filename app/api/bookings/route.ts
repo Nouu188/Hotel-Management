@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { parseISO } from 'date-fns';
 import {BookingRequestSchema } from "@/lib/validation";
 import { Prisma } from "@prisma/client";
+import { getBookingExpirationQueue } from "@/lib/queue";
 
 export async function POST(request: Request) {
   try {
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
         tx.bookingGuest.create({ data: { ...bookingGuest, bookingId: newBooking.id } }),
         usingServiceItems && usingServiceItems.length > 0 
           ? tx.usingService.createMany({ data: usingServiceItems.map(item => ({ bookingId: newBooking.id, status: 'SCHEDULED', ...item })) })
-          : Promise.resolve(), // Nếu không có service, trả về một promise đã hoàn thành
+          : Promise.resolve(), 
       ]);
 
       const inventoryUpdatePromises = bookingRoomItems.map(item => 
@@ -84,10 +85,24 @@ export async function POST(request: Request) {
       );
       await Promise.all(inventoryUpdatePromises);
 
+      const PENDING_TIME_LIMIT_MS = 15 * 60 * 1000; // 15 phút
+      const queue = getBookingExpirationQueue();
+
+      await queue.add(
+        'expire-booking-job',
+        { bookingId: newBooking.id },
+        {
+          delay: PENDING_TIME_LIMIT_MS,
+          jobId: newBooking.id, // Dùng bookingId làm jobId để tránh trùng lặp
+        }
+      );
+      console.log(`[API] Scheduled expiration job for booking ${newBooking.id}`);
+
       return { newBooking };
     }, {
       timeout: 15000,
     });
+
 
     return NextResponse.json({ success: true, data: result }, { status: 201 });
   } catch (error) {
